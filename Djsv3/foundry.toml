@@ -6,4 +6,9 @@ libs = ["lib"]
 [lint]
 lint_on_build = false
 
+[profile.compiler]
+optimizer = true
+runs = 200  # 设置优化的运行次数
+viaIR = true 
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

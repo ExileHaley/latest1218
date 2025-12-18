@@ -16,7 +16,6 @@ library Process {
         address recommender;    //推荐人地址
         Level   level;          //级别
         uint256 referralNum;    //有效邀请人数
-        uint256 directV5Count;  //V5人数
         uint256 performance;    //邀请总业绩
         uint256 referralAward;  //邀请奖励
         uint256 subCoinQuota;   //子币额度

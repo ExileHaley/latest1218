@@ -175,4 +175,38 @@ contract FinanceTest is Test{
 
     }
 
+    function test_arward_v1_repeat() public {
+        address user1 = address(10);
+        address user2 = address(11);
+        address user3 = address(12);
+        // 让user升级到V1
+        test_stake_utils(initialCode, user, 1000e18);
+        test_stake_utils(user, user1, 4000e18);
+        test_stake_utils(user, user2, 4000e18);
+        test_stake_utils(user, user3, 4000e18);
+        
+        //让user1升级到V1
+        address user4 = address(13);
+        address user5 = address(14);
+        address user6 = address(15);
+        test_stake_utils(user1, user4, 4000e18);
+        test_stake_utils(user1, user5, 4000e18);
+        test_stake_utils(user1, user6, 4000e18);
+
+        address user7 = address(16);
+        test_stake_utils(user1, user7, 1000e18);
+        (,Process.Level   level0,uint256 referralNum0,uint256 performance0,uint256 referralAward0,uint256 subCoinQuota0,,) = finance.referralInfo(user);
+        assertEq(uint256(level0), uint256(Process.Level.V1));
+        assertEq(referralNum0, 7);
+        assertEq(performance0, 25000e18);
+        assertEq(referralAward0, 1200e18);
+        assertEq(subCoinQuota0, 100e18);
+        // (,Process.Level   level1,uint256 referralNum1,uint256 performance1,uint256 referralAward1,uint256 subCoinQuota1,,) = finance.referralInfo(user1);
+        // assertEq(uint256(level1), uint256(Process.Level.V1));
+        // assertEq(referralNum1, 4);
+        // assertEq(performance1, 13000e18);
+        // assertEq(referralAward1, 100e18);
+        // assertEq(subCoinQuota1, 100e18);
+    }
+
 }

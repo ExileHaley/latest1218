@@ -58,6 +58,7 @@ library Process {
         } else if(r.level == Level.V5 && directV5Count >= 2){
             newLevel = Level.SHARE;
             addedShare = r.performance;
+            upgrade = true;
         }
     }
 

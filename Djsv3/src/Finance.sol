@@ -370,11 +370,17 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
             r.performance += amount;
 
             uint256 directV5 = 0;
-            if(r.level == Process.Level.V5){
-                for(uint i=0; i<directReferrals[current].length; i++){
-                    if(referralInfo[directReferrals[current][i]].level == Process.Level.V5) directV5++;
+            if (r.level == Process.Level.V5) {
+                address[] storage refs = directReferrals[current];
+                uint256 len = refs.length;
+                for (uint256 i = 0; i < len; ++i) {
+                    if (referralInfo[refs[i]].level == Process.Level.V5) {
+                        unchecked { ++directV5; }
+                        if (directV5 >= 2) break;
+                    }
                 }
             }
+
             
             // 发放奖励
             (uint256 reward, bool updated) = Process.calcReferralReward(r.level, hasRewarded, amount);

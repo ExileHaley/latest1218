@@ -59,7 +59,7 @@ contract Djs is ERC20, Ownable{
     mapping(address => uint256) public totalCostUsdt;
 
 
-    constructor(address _initialRecipient, address _marketing, address _wallet)ERC20("DJS","DJSC")Ownable(msg.sender){
+    constructor(address _initialRecipient, address _marketing, address _wallet)ERC20("DJS","DJS")Ownable(msg.sender){
         _mint(_initialRecipient, 1000000e18);
         pancakePair = IPancakeFactory(pancakeRouter.factory())
             .createPair(address(this), USDT);

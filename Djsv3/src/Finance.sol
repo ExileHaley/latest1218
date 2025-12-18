@@ -79,8 +79,13 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         revert("NO_DIRECT_SEND");
     }
 
-    modifier onlyPause() {
+    modifier Pause() {
         require(!pause, "Finance pause.");
+        _;
+    }
+
+    modifier onlyAdmin(){
+        require(admin == msg.sender, "Not permit.");
         _;
     }
 
@@ -111,11 +116,11 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         subCoinQuotas[Process.Level.V5] = 3000e18;
     }
 
-    function setPause(bool isPause) external onlyOwner{
+    function setPause(bool isPause) external onlyAdmin{
         pause = isPause;
     }
 
-    function emergencyWithdraw(address _token, uint256 _amount, address _to) external onlyOwner {
+    function emergencyWithdraw(address _token, uint256 _amount, address _to) external onlyAdmin {
         TransferHelper.safeTransfer(_token, _to, _amount);
     }
 
@@ -165,19 +170,111 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         //剩余的98%用于添加流动性
         ILiquidity(liquidityManager).addLiquidity(amountUSDT - amountUSDTToNode - amountToBurnSubToken);
 
-        //更新用户信息等内容
+        //更新用户质押收益、share等级收益
         _settleStakingReward(msg.sender);
+        if(r.level == Process.Level.SHARE) _settleShareReward(msg.sender);
 
+        //根据数量设置倍数 multiple
+        u.stakingUsdt += amountUSDT;
+        uint256 newMultiple = u.stakingUsdt > 3000e18 ? 3 : 2;
+        if (u.multiple != newMultiple) {
+            u.multiple = newMultiple;
+        }
+        //更新总质押totalStakedUsdt
+        totalStakedUsdt += amountUSDT;
 
+        if(!isAddDirectReferrals[msg.sender]){
+            directReferrals[r.recommender].push(msg.sender);
+            isAddDirectReferrals[msg.sender] = true;
+        }
 
+        // uint256 sharePerformance = processLayer(msg.sender, amountUSDT);
+        processUpgrade(msg.sender, amountUSDT);
+        emit Staked(msg.sender, amountUSDT);
+    }
+
+    function claim() external nonReentrant Pause{
+        Process.User storage u = userInfo[msg.sender];
+        if (u.stakingUsdt == 0) revert Errors.NoStake();
+
+        uint256 validStaked = totalStakedUsdt - getInvalidStaking(msg.sender);
+        updateShareFram(validStaked);
+
+        uint256 amount = getUserAward(msg.sender);
+        if (amount == 0) revert Errors.NoReward();
+
+        u.pendingProfit = 0;
+        u.extracted += amount;
+        Process.Referral storage r = referralInfo[msg.sender];
+        r.referralAward = 0;
+        if (r.level == Process.Level.SHARE) {
+            r.shareAwardDebt = perSharePerformanceAward * r.performance;
+        }
+
+        ILiquidity(liquidityManager).acquireSpecifiedUsdt(msg.sender, amount);
+        emit Claimed(msg.sender, amount);
     }
 
 
+    function getUserAward(address user) public view returns(uint256){
+        Process.User memory u = userInfo[user];
+        if (u.stakingUsdt == 0) return 0;
 
+        // 1. 计算当前动态质押收益（还没结算进 pendingProfit 部分）
+        // uint256 delta = block.timestamp - u.stakingTime;
+        // uint256 stakeAward = u.stakingUsdt * delta * perSecondStakedAeward / decimals;
+        uint256 stakeAward = getUserStakingAward(user);
 
+        // 2. SHARE 等级收益（此部分可动态计算，不累加进 pendingProfit）
+        uint256 shareAward = getUserShareLevelAward(user);
 
+        // 3. 用户当前总未提取收益
+        uint256 totalAward = u.pendingProfit + stakeAward + shareAward + referralInfo[user].referralAward;
 
+        //initialCode不受最大收益限制
+        if(user == initialCode) return totalAward;
+        // 4. 收益上限 = stakingUsdt * multiple
+        uint256 maxAward = u.stakingUsdt * u.multiple;
 
+        // 5. 用户剩余额度
+        if (u.extracted >= maxAward) return 0;
+        uint256 remaining = maxAward - u.extracted;
+
+        // 6. 返回最小值
+        if (totalAward > remaining) return remaining;
+        return totalAward;
+    }
+
+    //计算Share等级的收益
+    //1.每次claim时更新perSharePerformanceAward，用totalStakedUsdt * 时间间隔 * 每个质押收益 / 总的share等级业绩
+    //2.计算动态收益，按照上述方式计算没更新的当前时间段内的收益，动态计算不依赖更新
+    //3.把两部分的收益加起来就等于总的Share等级收益
+    function getUserShareLevelAward(address user) public view returns(uint256){
+        if(lastShareAwardTime ==0 ) return 0;
+        Process.Referral memory r = referralInfo[user];
+        if (r.performance == 0 || totalSharePerformance == 0) return 0;
+
+        // 累计奖励
+        uint256 acc = perSharePerformanceAward;
+
+        // 动态奖励（未更新到 perSharePerformanceAward 的部分）
+        uint256 delta = block.timestamp - lastShareAwardTime;
+        if (delta > 0) {
+            uint256 totalShareAward = totalStakedUsdt * delta * perSecondStakedAeward * shareRate / 100;
+            acc += totalShareAward / totalSharePerformance;
+        }
+
+        uint256 reward = r.performance * acc / decimals;
+
+        // 扣除用户已结算债务
+        if (reward <= r.shareAwardDebt) return 0;
+        return reward - r.shareAwardDebt;
+    }
+
+    function getUserStakingAward(address user) public view returns(uint256){
+        Process.User memory u = userInfo[user];
+        return (block.timestamp - u.stakingTime) * perSecondStakedAeward * u.stakingUsdt / decimals;
+    }
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -198,9 +295,9 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         updateShareFram(totalStakedUsdt);
         uint256 shareAward = getUserShareLevelAward(msg.sender);
         if(shareAward > 0) {
-                u.pendingProfit += shareAward;
+            userInfo[user].pendingProfit += shareAward;
+            referralInfo[user].shareAwardDebt = perSharePerformanceAward * referralInfo[user].performance;
         }
-        r.shareAwardDebt = perSharePerformanceAward * r.performance;
     }
 
     /**
@@ -255,6 +352,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         perSharePerformanceAward += totalShareAward / totalSharePerformance;
         lastShareAwardTime = block.timestamp;
     }
+    
 
     /**
     * @dev 计算用户升级并更新数据
@@ -268,7 +366,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         while(current != address(0)){
             Process.Referral storage r = referralInfo[current];
             //人数放在邀请里吧
-            // r.referralNum += 1;
+            r.referralNum += 1;
             r.performance += amount;
 
             uint256 directV5 = 0;
@@ -319,22 +417,22 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         return (v1Recommender != address(0) && !referralInfo[user].isMigration);
     }
 
-    // function getInvalidStaking(address user) public view returns(uint256){
-    //     Process.User storage u = userInfo[user];
-    //     uint256 totalAward = u.pendingProfit + getUserStakingAward(user) + getUserShareLevelAward(user) / decimals + u.extracted;
-    //     if (totalAward > u.stakingUsdt * u.multiple) return u.stakingUsdt;
-    //     else return 0; 
+    function getInvalidStaking(address user) public view returns(uint256){
+        Process.User storage u = userInfo[user];
+        uint256 totalAward = u.pendingProfit + getUserStakingAward(user) + getUserShareLevelAward(user) / decimals + u.extracted;
+        if (totalAward > u.stakingUsdt * u.multiple) return u.stakingUsdt;
+        else return 0; 
 
-    // }
+    }
 
     // 返回用户基础信息 + 当前可提取收益 + Share等级收益
     function getUserInfoBasic(address user) public view returns(
         Process.Level level,
         address recommender,
         uint256 stakingUsdt,
-        uint256 multiple
-        // uint256 totalAward,
-        // uint256 shareAward
+        uint256 multiple,
+        uint256 totalAward,
+        uint256 shareAward
     ){
         Process.User memory u = userInfo[user];
         Process.Referral memory r = referralInfo[user];
@@ -344,10 +442,10 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         stakingUsdt = u.stakingUsdt;
         multiple = u.multiple;
 
-        // // 当前可提取总收益
-        // totalAward = getUserAward(user);
-        // // 当前Share等级收益
-        // shareAward = getUserShareLevelAward(user);
+        // 当前可提取总收益
+        totalAward = getUserAward(user);
+        // 当前Share等级收益
+        shareAward = getUserShareLevelAward(user);
     }
 
     // 返回用户邀请/推荐相关信息
@@ -366,4 +464,5 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         subCoinQuota = r.subCoinQuota;
         isMigration = r.isMigration;
     }
+
 }

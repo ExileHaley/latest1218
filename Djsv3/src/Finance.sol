@@ -169,9 +169,10 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         if(nodeDividends != address(0)) INodeDividends(nodeDividends).updateFarm(amountUSDTToNode);
         //剩余的98%用于添加流动性
         ILiquidity(liquidityManager).addLiquidity(amountUSDT - amountUSDTToNode - amountToBurnSubToken);
-
+        
         //更新用户质押收益、share等级收益
         _settleStakingReward(msg.sender);
+        updateShareFram(totalStakedUsdt);
         if(r.level == Process.Level.SHARE) _settleShareReward(msg.sender);
 
         //根据数量设置倍数 multiple
@@ -292,7 +293,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
     */
 
     function _settleShareReward(address user) internal{
-        updateShareFram(totalStakedUsdt);
+        
         uint256 shareAward = getUserShareLevelAward(msg.sender);
         if(shareAward > 0) {
             userInfo[user].pendingProfit += shareAward;

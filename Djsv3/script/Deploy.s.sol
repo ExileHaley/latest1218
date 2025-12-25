@@ -57,23 +57,23 @@ contract DeployScript is Script {
 
 
         //djsc param init
-        technology = address(0);
-        foundation = address(0);
-        marketingForDjsc = address(0);
-        pot = address(0);
+        technology = address(0x6f83852EA96F41Cb1a71a66730Ca4F021baB5A00);
+        foundation = address(0x61940dc64161a8fC9672C8E53e5784f13143ff33);
+        marketingForDjsc = address(0x81B2d8cbCd1Aceda4CbCbDbD976b2C2ca2591489);
+        pot = address(0x7364032cE6AAbB49721DB4dC1d7a609CA4Bf3d2F);
 
-        sellFee = address(0);
-        buyFee = address(0);
-        profitFee = address(0);
+        sellFee = address(0xf3e1Ff26DDC4E7d19a185D662e46EFe88ad469EB);
+        buyFee = address(0x5Cca5A3e2Eef835417A571B28822B1e991b3B246);
+        profitFee = address(0xA751cD53a795d42c52444A5DA5503949D706500A);
 
         //djs parm init 
-        initialRecipient = address(0);
-        marketingForDjs = address(0);
+        initialRecipient = address(0xf93BbB196a961F7e8B54900DBb38e84a6d1fC937);
+        marketingForDjs = address(0x03C747ffBb61605390d2f275E61a734A9d329e04);
         // address public nodeDividends;
-        wallet = address(0);
+        wallet = address(0x4cDaC2E5C5125F5D6381109cd14756F05282e59d);
 
         //finance param init
-        admin = address(0);
+        admin = address(0xB791b9E7a13991371462c7A76628Ac79777e3165);
     }
 
     function run() public {
@@ -131,3 +131,21 @@ contract DeployScript is Script {
     }
 
 }
+
+// djsc的地址:0xC80F1014421dc1504843Fc4966646A1bC3a22f17
+
+// 技术地址 0x6f83852EA96F41Cb1a71a66730Ca4F021baB5A00
+// 基金会地址 0x61940dc64161a8fC9672C8E53e5784f13143ff33
+// 营销地址 0x81B2d8cbCd1Aceda4CbCbDbD976b2C2ca2591489
+// 底池地址 0x7364032cE6AAbB49721DB4dC1d7a609CA4Bf3d2F
+// 卖出手续费地址 0xf3e1Ff26DDC4E7d19a185D662e46EFe88ad469EB
+// 买入手续费地址 0x5Cca5A3e2Eef835417A571B28822B1e991b3B246
+// 盈利税地址 0xA751cD53a795d42c52444A5DA5503949D706500A
+
+// djs的地址 0xad7DDeE33153860D2169e023698e78C59CeD7550
+// 代币接收者地址 0xf93BbB196a961F7e8B54900DBb38e84a6d1fC937
+// 营销地址 0x03C747ffBb61605390d2f275E61a734A9d329e04
+// 盈利税5%的地址(用于购买子币的部分手动去买) 0x4cDaC2E5C5125F5D6381109cd14756F05282e59d
+
+// 理财合约的地址 0xb791b9e7a13991371462c7a76628ac79777e3165
+// 管理员地址 0xb791b9e7a13991371462c7a76628ac79777e3165

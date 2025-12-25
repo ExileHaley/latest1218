@@ -26,7 +26,8 @@ interface IUniswapV2Router02 {
 contract Djsc is ERC20, Ownable{
     event SwapAndSendTax(address recipient, uint256 tokensSwapped);
     IUniswapV2Router02 public pancakeRouter = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
-    address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
+    // address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
+    address public constant USDT = 0x3c83065B83A8Fd66587f330845F4603F7C49275c;
     uint256 public constant PROFIT_TAX_RATE = 10;
     uint256 public sell_tax_rate = 3;
     uint256 public buy_tax_rate = 3;

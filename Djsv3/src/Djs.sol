@@ -37,7 +37,8 @@ interface INodeDividends {
 contract Djs is ERC20, Ownable{
     event SwapAndSendTax(address recipient, uint256 tokensSwapped);
     IUniswapV2Router02 public pancakeRouter = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
-    address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
+    // address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
+    address public constant USDT = 0x3c83065B83A8Fd66587f330845F4603F7C49275c;
     address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
     uint256 public constant SWAP_DEAD_FEE_RATE = 2;
     uint256 public constant SWAP_NODE_FEE_RATE = 3;
@@ -60,7 +61,7 @@ contract Djs is ERC20, Ownable{
 
 
     constructor(address _initialRecipient, address _marketing, address _wallet)ERC20("DJS","DJS")Ownable(msg.sender){
-        _mint(_initialRecipient, 1000000e18);
+        _mint(_initialRecipient, 6870000e18);
         pancakePair = IPancakeFactory(pancakeRouter.factory())
             .createPair(address(this), USDT);
         allowlist[_initialRecipient] = true;

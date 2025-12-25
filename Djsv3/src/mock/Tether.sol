@@ -5,7 +5,7 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract Tdjs is ERC20, Ownable{
+contract Tether is ERC20, Ownable{
 
     constructor(address _initialRecipient)ERC20("TEST-USD","TUSD")Ownable(msg.sender){
         _mint(_initialRecipient, 10000000000000000e18);

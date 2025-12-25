@@ -11,7 +11,8 @@ import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC721Holder{
-    address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
+    // address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
+    address public constant USDT = 0x3c83065B83A8Fd66587f330845F4603F7C49275c;
     address public nfts;
     address public staking;
     address public token;

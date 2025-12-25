@@ -25,9 +25,6 @@ $ cast nonce [wallet-address] --rpc-url https://bsc.blockrazor.xyz
 #### 映射钱保持不能入金和提现的状态，批量给地址判断没映射的手动进行映射,给一个状态判断是否进行了映射
 
 
-#### DJS token address:
-#### staking address:
-
 
 #### staking func list
 ```solidity
@@ -58,13 +55,13 @@ t2: 用户 claim 奖励
 t3: 下一次 getShareLevelAward
     └─ 同样按照新的 lastShareAwardTime / perSharePerformanceAward / delta 计算
 ```
+#### test usdt token:0x3c83065B83A8Fd66587f330845F4603F7C49275c
+#### djs token:0x75B8c892FC65fFF466a7b84A5c5b8aC8ec1395A5
+#### djsc token:0x101FF1333e9776D2D39a400287c945221a20d676
 
-#### djs token:
-#### djsc token:
-
-#### liquidityManager contract:
-#### nodeDividends contract:
-#### finance contract:
+#### liquidityManager contract:0x76076ED15b607c75Ed950084283cA342d5CbF9F9
+#### nodeDividends contract:0x72B25b3F17598AAdeB315Ea82Bbaa7804374bA98
+#### finance contract:0xeA7eB2F853b23450798a3A98c94C8fd6Cd029dD1
 
 ### finance func list
 ```solidity
@@ -126,10 +123,37 @@ function swapSubToken(uint256 amountUSDT) external;
 function emergencyWithdraw(address _token, uint256 _amount, address _to) external;
 
 
-
 ```
 
 ### nodeDividends func list
 ```solidity
-
+//质押NFT，tokenIds是nft的tokenId数组列表
+function stake(uint256[] memory tokenIds) external;
+//获取可提取的djs(claimable)，已经释放数量(released)
+function getReleaseAmountToken(address user)
+        public
+        view
+        returns (uint256 released, uint256 claimable);
+//获取可提取的usdt数量
+function getAvailableAmountUSDT(address user) public view returns(uint256);
+//提取djs
+function claimToken(uint256 amountToken) external;
+//提取usdt
+function claimUSDT() external;
+//获取用户信息
+function getUserInfo(address user) 
+        external 
+        view 
+        returns (
+            uint256 nftQuantity,        //NFT数量
+            uint256[] memory tokenIds,  //tokenId质押列表
+            uint256 releaseQuota,       //已经释放的额度
+            uint256 stakingTime,        //质押时间
+            uint256 pendingToken,       //忽略
+            uint256 pendingUSDT,        //忽略
+            uint256 extractedToken,     //已提取djs数量
+            uint256 farmDebt,           //忽略
+            uint256 claimableToken,     //可提取的djs数量
+            uint256 availableUSDT       //可提取的usdt数量
+        );
 ```

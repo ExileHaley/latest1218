@@ -22,14 +22,6 @@ $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --b
 $ cast nonce [wallet-address] --rpc-url https://bsc.blockrazor.xyz
 ```
 
-#### 映射钱保持不能入金和提现的状态，批量给地址判断没映射的手动进行映射,给一个状态判断是否进行了映射
-
-
-
-#### staking func list
-```solidity
-
-```
 ```
 时间轴: t0 -------- t1 -------- t2 -------- t3
 

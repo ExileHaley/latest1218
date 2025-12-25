@@ -85,7 +85,7 @@ contract Djs is ERC20, Ownable{
     }
 
     function _update(address from, address to, uint256 amount) internal virtual override {
-        // 状态控制
+
         if (swapping || from == address(0) || to == address(0) || allowlist[from] || allowlist[to]) {
             super._update(from, to, amount);
             return;
@@ -104,13 +104,13 @@ contract Djs is ERC20, Ownable{
             return;
         }
 
-        // 非交易行为：处理合约代币分发
+
         uint256 balanceToken = balanceOf(address(this));
         if (balanceToken > 0) {
             _swapAndDistribute(balanceToken);
         }
 
-        // ===== 非交易 transfer：成本迁移，不触发盈利税 =====
+
         uint256 balanceBefore = balanceOf(from);
         uint256 costBefore = totalCostUsdt[from];
 
@@ -119,18 +119,18 @@ contract Djs is ERC20, Ownable{
         if (costBefore > 0 && balanceBefore > 0) {
             uint256 migratedCost = costBefore * amount / balanceBefore;
 
-            // from 扣成本
+
             totalCostUsdt[from] = costBefore - migratedCost;
             if (totalCostUsdt[from] < 1e6) {
                 totalCostUsdt[from] = 0;
             }
 
-            // to 加成本
+
             totalCostUsdt[to] += migratedCost;
         }
     }
 
-    // -------------------------- 买入处理 --------------------------
+
     function _handleBuy(address from, address to, uint256 amount) private {
         require(tradingOpen, "BUY_AND_SELL_ISDISABLED.");
 
@@ -140,15 +140,14 @@ contract Djs is ERC20, Ownable{
 
         _updateCost(to, amount + (amount * 25 / 1000));
 
-        // 扣除固定 swap 税
         super._update(from, address(this), nodeFee);
         super._update(from, DEAD, deadFee);
 
-        // 用户实际接收
+
         super._update(from, to, toAmount);
     }
 
-    // -------------------------- 卖出处理 --------------------------
+
     function _handleSell(address from, address to, uint256 amount) private {
         require(tradingOpen, "BUY_AND_SELL_ISDISABLED.");
         uint256 balanceBefore = balanceOf(from);
@@ -156,7 +155,7 @@ contract Djs is ERC20, Ownable{
         uint256 nodeFee = amount * SWAP_NODE_FEE_RATE / 100;
         uint256 toAmount = amount - deadFee - nodeFee;
 
-        // 计算盈利税
+   
         uint256 taxAmount = getProfitTaxToken(from, toAmount);
 
         if (taxAmount > 0 ) {
@@ -164,15 +163,14 @@ contract Djs is ERC20, Ownable{
             _distributeProfitTax(taxAmount);
         }
 
-        // 扣除固定 swap 税
+        
         super._update(from, address(this), nodeFee);
         super._update(from, DEAD, deadFee);
 
-        // 实际卖出到 pancakePair
+        
         super._update(from, to, toAmount - taxAmount);
 
 
-        // ===== 成本清理 =====
         uint256 balanceAfter = balanceOf(from);
         if (balanceAfter == 0) {
             totalCostUsdt[from] = 0;
@@ -188,7 +186,6 @@ contract Djs is ERC20, Ownable{
 
     }
 
-    // -------------------------- 盈利税分发 --------------------------
     function _distributeProfitTax(uint256 taxAmount) private {
         uint256 marketingPortion = taxAmount * 57 / 100;
         uint256 walletPortion    = taxAmount * 28 / 100;
@@ -205,7 +202,6 @@ contract Djs is ERC20, Ownable{
         
     }
 
-    // -------------------------- 合约代币分发 --------------------------
     function _swapAndDistribute(uint256 amountToken) private {
         
         if(nodeDividends != address(0)){
@@ -261,6 +257,9 @@ contract Djs is ERC20, Ownable{
     }
 
     function _updateCost(address to, uint256 amountToken) private{
+        if (to == address(pancakeRouter) || to == pancakePair) {
+            return;
+        }
         uint256 price = currentPrice(); // USDT / token
         uint256 costUsdt = price * amountToken / 1e18;
         totalCostUsdt[to] += costUsdt;
@@ -283,7 +282,7 @@ contract Djs is ERC20, Ownable{
             PROFIT_NODE_TAX_RATE +
             PROFIT_WALLET_TAX_RATE;
 
-        // 盈利部分对应 token 数量
+
         uint256 profitToken = amountToken * (price - avg) / price;
 
         taxToken = profitToken * totalProfitRate / 100;

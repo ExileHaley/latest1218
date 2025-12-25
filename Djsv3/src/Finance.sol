@@ -424,6 +424,10 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         return (v1Recommender != address(0) && !referralInfo[user].isMigration);
     }
 
+    function validReferralCode(address user) external view returns(bool){
+        return userInfo[user].stakingUsdt > 0;
+    }
+
     function getInvalidStaking(address user) public view returns(uint256){
         Process.User storage u = userInfo[user];
         uint256 totalAward = u.pendingProfit + getUserStakingAward(user) + getUserShareLevelAward(user) / decimals + u.extracted;

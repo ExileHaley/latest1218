@@ -43,6 +43,7 @@ contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         _;
     }
 
+
     // Authorize contract upgrades only by the owner
     function _authorizeUpgrade(address newImplementation) internal view override onlyOwner(){}
 

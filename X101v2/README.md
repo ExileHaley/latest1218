@@ -14,25 +14,48 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 
 ### deploy wallet
 ```shell
-$ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
+$ forge script script/Deploy.s.sol -vvv --rpc-url=https://rpc.naaidepin.co --broadcast --private-key=[privateKey]
 ```
 
-1.添加lp，以第一个输入的代币数量为主，推两个币的数量和lp的数量
-2.提现的时候，移除流动性，代币单独提现
 
-3.同时质押两个代币，每个代币有不同的分发方式，分发比例不一样，推两个币的数量
+#### gas:0x43c8bc6149D3D29Be2B676cB51667c9be15B7e94
+#### x101:0xe102277ec9716c276B632Ab93A2860E0286982BC
+#### recharge contract:0x38A072f3dAb35e5Fc2139A7751bbf31DD2C3a419
+### recharge func list
+```solidity
+//管理员方法，使用管理员地址操作，token代币地址，recipients该代币要分配的地址，rates按照地址设置比例，比如10%，就是100，分母是1000
+//举例token = usdt合约地址，recipients = [A地址、B地址]，rates = [300,700]，意思就是用户充值的usdt30%给到A地址，70%给到B地址
+function setAllocation(address token, address[] calldata recipients, uint256[] calldata rates) external;
+//添加流动性时计算所需token1的数量
+function getQuoteAmount(
+        address token0,
+        address token1,
+        uint256 amount0
+    ) external view returns (uint256);
+//添加流动性，token1的数量自动计算，不需要输入，这里token0和token1都需要对recharge授权
+function addLiquidity(
+        address token0,
+        address token1,
+        uint256 amount0,
+        string calldata remark
+    ) external;
+//双币充值
+function multiRecharge(
+        address token0, 
+        address token1, 
+        uint256 amount0, 
+        uint256 amount1, 
+        string calldata remark
+    ) external;
 
-4.代币合约升级，黑洞地址要改dead
-
-5.后端升级，获取授权数量
-
-lp接收地址、lp算力/联合算力提现地址，联合算力目前两个代币对应分发的3、5个地址
-
-
-
-
-1.代币合约更新，卖出销毁比例可调，用户100%到账，避免大阴线
-2.合约添加lp、移除lp
-3.合约新增双代币充值，不同代币对应不同的分发规则
-4.后端服务新增lp提现接口、授权数量查询接口
-5.我给你一个兑换接口，服务端给你一个推送，落库
+//余额查询
+struct Info{
+        address user; //钱包地址
+        uint256 amount; //token在该钱包中的数量
+    }
+function multiBalanceOf(address token, address[] calldata users) external view returns (Info[] memory);
+//获取token的价格，address交易对代币，uint256价格有精度
+function getPrice(address token) external view returns(address, uint256);
+//获取授权数量token代币地址，owner钱包地址，spender接收授权的合约地址
+function getAllowance(address token, address owner, address spender) public view virtual returns (uint256);
+```

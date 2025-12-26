@@ -33,6 +33,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
     event Exchange(
         string remark,
+        address user,
         address original,
         uint256 amount,
         address target,
@@ -279,6 +280,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
         emit MultiRecharge(
             remark,
+            msg.sender,
             token0,
             amount0,
             token1,

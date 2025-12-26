@@ -388,8 +388,8 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         return (address(0), 0);
     }
 
-    function getAllowance(address token, address owner, address spender) public view virtual returns (uint256){
-        return IERC20(token).allowance(owner, spender);
+    function getAllowance(address token, address owner) public view virtual returns (uint256){
+        return IERC20(token).allowance(owner, address(this));
     }
 
 }

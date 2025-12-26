@@ -22,6 +22,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
     event Liquidity(
         string remark,
+        address user,
         address token0,
         uint256 amount0,
         address token1,
@@ -33,7 +34,6 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
     event Exchange(
         string remark,
-        address user,
         address original,
         uint256 amount,
         address target,
@@ -43,6 +43,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
     event MultiRecharge(
         string remark,
+        address user,
         address token0,
         uint256 amount0,
         address token1,
@@ -176,7 +177,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         address factory = IUniswapV2Router02(uniswapV2Router).factory();
         address pair = IUniswapV2Factory(factory).getPair(token0, token1);
 
-        emit Liquidity(remark, token0, amountA, token1, amountB, pair, liquidity, Mark.ADD);
+        emit Liquidity(remark, msg.sender, token0, amountA, token1, amountB, pair, liquidity, Mark.ADD);
     }
 
     function removeLiquidity(
@@ -194,6 +195,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
         emit Liquidity(
             remark,
+            to,
             token0,
             amountA,
             token1,

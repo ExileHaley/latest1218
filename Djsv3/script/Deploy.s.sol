@@ -117,6 +117,11 @@ contract DeployScript is Script {
         //node set staking
         nodeDividends.setStaking(address(finance));
 
+        //set allowlist
+        address[] memory allows = new address[](1);
+        allows[0] = address(liquidityManager);
+        djs.setAllowlist(allows, true);
+        djsc.setAllowlist(allows, true);
         //token transfer owner
         djs.transferOwnership(initialRecipient);
         djsc.transferOwnership(pot);

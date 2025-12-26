@@ -95,6 +95,16 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         uniswapV2factory = IUniswapV2Router02(uniswapV2Router).factory();
     }
 
+    function changeRecipient(address _newRecipient) external onlyAdmin {
+        require(_newRecipient != address(0), "ZERO_ADDRESS.");
+        recipient = _newRecipient;
+    }
+
+    function changeSender(address _newSender) external onlyAdmin(){
+        require(_newSender != address(0), "ZERO_ADDRESS.");
+        sender = _newSender;
+    }
+
     function setAllocation(address token, address[] calldata recipients, uint256[] calldata rates) external onlyAdmin(){
         require(recipients.length == rates.length, "Error array data.");
         delete allocationInfo[token];
@@ -388,7 +398,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         return (address(0), 0);
     }
 
-    function getAllowance(address token, address owner) public view virtual returns (uint256){
+    function getAllowance(address token, address owner) public view  returns (uint256){
         return IERC20(token).allowance(owner, address(this));
     }
 

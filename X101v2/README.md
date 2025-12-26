@@ -53,14 +53,4 @@ function multiRecharge(
         string calldata remark
     ) external;
 
-//余额查询
-struct Info{
-        address user; //钱包地址
-        uint256 amount; //token在该钱包中的数量
-    }
-function multiBalanceOf(address token, address[] calldata users) external view returns (Info[] memory);
-//获取token的价格，address交易对代币，uint256价格有精度
-function getPrice(address token) external view returns(address, uint256);
-//获取授权数量token代币地址，owner钱包地址，spender接收授权的合约地址
-function getAllowance(address token, address owner) public view virtual returns (uint256);
 ```

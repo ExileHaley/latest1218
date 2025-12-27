@@ -119,33 +119,34 @@ function emergencyWithdraw(address _token, uint256 _amount, address _to) externa
 
 ### nodeDividends func list
 ```solidity
-//质押NFT，tokenIds是nft的tokenId数组列表
-function stake(uint256[] memory tokenIds) external;
-//获取可提取的djs(claimable)，已经释放数量(released)
-function getReleaseAmountToken(address user)
-        public
-        view
-        returns (uint256 released, uint256 claimable);
-//获取可提取的usdt数量
-function getAvailableAmountUSDT(address user) public view returns(uint256);
-//提取djs
-function claimToken(uint256 amountToken) external;
-//提取usdt
-function claimUSDT() external;
+//用户质押NFT，tokenIds传入nft的tokenId，这里允许多个NFT质押，所以是数组参数
+function stake(uint256[] calldata tokenIds) external;
+//根据订单编号orderId获取订单信息
+function getOrderInfo(
+        uint256 orderId
+    ) external view returns (
+        uint256 nftQuantity, //改订单拥有的NFT数量
+        uint256[] memory tokenIds, //改订单质押的NFT tokenId的编号
+        uint256 tokenQuota, //获得的代币额度djs
+        uint256 stakingTime, //订单质押时间
+        uint256 extracted, //当前订单已被提取的djs
+        uint256 extractable, //当前订单可提取的djs
+        uint256 countDown //当前订单倒计时s
+    );
+//提取订单收益djs，默认提取全部
+function claimOrderAward(uint256 orderId) external;
+//提取用户的USDT分红，默认提取全部
+function claimUserUSDT() external;
 //获取用户信息
-function getUserInfo(address user) 
-        external 
-        view 
-        returns (
-            uint256 nftQuantity,        //NFT数量
-            uint256[] memory tokenIds,  //tokenId质押列表
-            uint256 releaseQuota,       //已经释放的额度
-            uint256 stakingTime,        //质押时间
-            uint256 pendingToken,       //忽略
-            uint256 pendingUSDT,        //忽略
-            uint256 extractedToken,     //已提取djs数量
-            uint256 farmDebt,           //忽略
-            uint256 claimableToken,     //可提取的djs数量
-            uint256 availableUSDT       //可提取的usdt数量
-        );
+function getUserInfo(
+        address user
+    ) external view returns (
+        uint256 amountNFT, //用户所有订单一共质押的NFT数量
+        uint256[] memory allOrders, //用户质押的所有订单编号
+        uint256 awardUSDT //用户可以提取的USDT分红数量
+    );
+//在getUserInfo中拿到用户质押的所有订单，在这个方法中进行判断，判断订单是否结束
+//结束就是当前订单的所有收益已经全部被提取
+function isOrderFinished(uint256 orderId) public view returns (bool);
+
 ```

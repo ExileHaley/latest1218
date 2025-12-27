@@ -10,30 +10,35 @@ import {TransferHelper} from "./libraries/TransferHelper.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
+
 contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ERC721Holder{
-    // address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
     address public constant USDT = 0x3c83065B83A8Fd66587f330845F4603F7C49275c;
     address public nfts;
-    address public staking;
     address public token;
+    address public staking;
     
     struct User{
-        uint256   nftQuantity;
-        uint256[] tokenIds;
-        uint256   releaseQuota;
-        uint256   stakingTime;
-        uint256   pendingToken;
-        uint256   pendingUSDT;
-        uint256   extractedToken;
+        uint256   amountNFT;
         uint256   farmDebt;
+        uint256   pending;
+        uint256[] orderIds;
     }
-
-
     mapping(address => User) public userInfo;
+    struct Order{
+        address holder;
+        uint256 nftQuantity;
+        uint256[] tokenIds;
+        uint256 tokenQuota;
+        uint256 stakingTime;
+        uint256 extracted;
+    }
+    mapping(uint256 => Order) orderInfo;
+
     uint256 public totalNftQuantity;
     uint256 public perNftAward;
     uint256 public forexRate;
     uint256 public totalDuration;
+    uint256 public orderIndex;
 
     receive() external payable {
         revert("NO_DIRECT_SEND");
@@ -43,7 +48,6 @@ contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         require(msg.sender == staking || msg.sender == token, "Not permit.");
         _;
     }
-
 
     // Authorize contract upgrades only by the owner
     function _authorizeUpgrade(address newImplementation) internal view override onlyOwner(){}
@@ -57,6 +61,7 @@ contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         token = _token;
         forexRate = 500e18;
         totalDuration = 30 * 86400;
+        orderIndex = 1;
     }
 
     function setStaking(address _staking) external onlyOwner{
@@ -64,158 +69,142 @@ contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     }
 
     function updateFarm(uint256 amountUSDT) external onlyFarm() {
-
-        // 如果没有 NFT 则不更新（或把钱保留至合约，取决于业务）
         if (totalNftQuantity == 0) {
-            // 如果想把该笔资金记入某个池子，请实现额外逻辑
             return;
         }
-
-        // 每个 NFT 增加的份额；注意：整除会丢失精度，建议用带小数位的单位（USDT 18 decimals）
         perNftAward += (amountUSDT / totalNftQuantity);
     }
-    
-    function stake(uint256[] memory tokenIds) external {
+
+    function stake(uint256[] calldata tokenIds) external {
+        require(tokenIds.length > 0, "EMPTY");
+
+        // ========== 先结算用户已有的 USDT ==========
         User storage u = userInfo[msg.sender];
-        if(u.releaseQuota > 0){
-            (, uint256 claimable) = getReleaseAmountToken(msg.sender);
-            if(claimable > 0) u.pendingToken = claimable;
-        }
-        
-
-        for(uint i=0; i<tokenIds.length; i++){
-            IERC721(nfts).safeTransferFrom(msg.sender, address(this), tokenIds[i]);
-            u.tokenIds.push(tokenIds[i]);
-        }
-        u.pendingUSDT = getAvailableAmountUSDT(msg.sender);
-        u.nftQuantity += tokenIds.length;
-        u.releaseQuota += (tokenIds.length * forexRate);
-        u.stakingTime = block.timestamp;
-        u.farmDebt = u.nftQuantity * perNftAward;
-        totalNftQuantity += tokenIds.length;
-
-    }
-
-    function getReleaseAmountToken(address user)
-        public
-        view
-        returns (uint256 released, uint256 claimable)
-    {
-        User storage u = userInfo[user];
-
-        // 如果没有 releaseQuota 或未开始释放
-        if (u.releaseQuota == 0 && u.pendingToken == 0) {
-            return (0, 0);
-        }
-
-        // currentReleased: 本周期基于 u.releaseQuota 从 stakingTime 到 now 已释放多少
-        uint256 currentReleased = 0;
-        if (u.stakingTime > 0 && u.releaseQuota > 0) {
-            uint256 elapsed = block.timestamp - u.stakingTime;
-            if (elapsed >= totalDuration) {
-                currentReleased = u.releaseQuota;
-            } else {
-                currentReleased = (u.releaseQuota * elapsed) / totalDuration;
+        if (u.amountNFT > 0) {
+            uint256 pending = u.amountNFT * perNftAward - u.farmDebt;
+            if (pending > 0) {
+                u.pending += pending;
             }
         }
 
-        // released = 历史 pending + 本周期已释放
-        released = u.pendingToken + currentReleased;
+        // ========== 创建 order ==========
+        Order storage o = orderInfo[orderIndex];
+        o.holder = msg.sender;
+        o.nftQuantity = tokenIds.length;
+        o.stakingTime = block.timestamp;
+        o.tokenQuota = tokenIds.length * forexRate;
 
-        // claimable = released - 已真正发出的 (extractedToken)
-        if (released <= u.extractedToken) {
-            claimable = 0;
+        for (uint i = 0; i < tokenIds.length; i++) {
+            IERC721(nfts).safeTransferFrom(msg.sender, address(this), tokenIds[i]);
+            o.tokenIds.push(tokenIds[i]);
+        }
+
+        // ========== 更新用户 & 全局 ==========
+        u.amountNFT += tokenIds.length;
+        u.orderIds.push(orderIndex);
+
+        totalNftQuantity += tokenIds.length;
+
+        // ⚠️ 关键：更新 farmDebt
+        u.farmDebt = u.amountNFT * perNftAward;
+
+        orderIndex++;
+    }
+
+
+    function getExtractable(uint256 orderId) public view returns(uint256){
+        Order storage o = orderInfo[orderId];
+        if (o.tokenQuota == 0 || o.stakingTime == 0) return 0;
+        uint256 elapsed = block.timestamp - o.stakingTime;
+        if (elapsed >= totalDuration) {
+            return o.tokenQuota - o.extracted;
         } else {
-            claimable = released - u.extractedToken;
+            return (o.tokenQuota * elapsed) / totalDuration - o.extracted;
         }
     }
 
-    function getAvailableAmountUSDT(address user) public view returns(uint256){
-        User storage u = userInfo[user];
+    function getCountdown(uint256 orderId) public view returns (uint256) {
+        Order storage o = orderInfo[orderId];
+        if (o.stakingTime == 0) return 0;
 
-        // totalEarned = pendingUSDT + nftQuantity * perNftAward
-        uint256 totalEarned = u.pendingUSDT + (u.nftQuantity * perNftAward);
-
-        // 如果 farmDebt >= totalEarned 返回 0，避免 underflow
-        if (u.farmDebt >= totalEarned) return 0;
-        return totalEarned - u.farmDebt;
+        uint256 elapsed = block.timestamp - o.stakingTime;
+        if (elapsed >= totalDuration) return 0;
+        else return totalDuration - elapsed;
     }
 
-    function claimToken(uint256 amountToken) external {
+    function getOrderInfo(
+        uint256 orderId
+    ) external view returns (
+        uint256 nftQuantity,
+        uint256[] memory tokenIds,
+        uint256 tokenQuota,
+        uint256 stakingTime,
+        uint256 extracted,
+        uint256 extractable,
+        uint256 countDown
+    ) {
+        Order storage o = orderInfo[orderId];
+
+        nftQuantity = o.nftQuantity;
+        tokenIds = o.tokenIds;
+        tokenQuota = o.tokenQuota;
+        stakingTime = o.stakingTime;
+        extracted = o.extracted;
+
+        extractable = getExtractable(orderId);
+        countDown = getCountdown(orderId);
+    }
+
+    function claimOrderAward(uint256 orderId) external{
+        require(orderInfo[orderId].holder == msg.sender, "Not permit.");
+        uint256 award = 0;
+        award = getExtractable(orderId);
+        require(award > 0, "NO_AWARD");
+        orderInfo[orderId].extracted += award;
+        TransferHelper.safeTransfer(token, msg.sender, award);
+    }
+
+    function claimUserUSDT() external {
         User storage u = userInfo[msg.sender];
 
-        (, uint256 claimable) = getReleaseAmountToken(msg.sender);
-        require(amountToken > 0 && amountToken <= claimable, "Invalid amount");
+        uint256 pending = u.amountNFT * perNftAward - u.farmDebt;
+        uint256 total = u.pending + pending;
 
-        // 优先从 pendingToken 减（如果 pending 不够则 pending=0，剩余由后续的线性释放抵扣）
-        if (amountToken <= u.pendingToken) {
-            u.pendingToken -= amountToken;
-        } else {
-            // 领走全部 pending，并剩余一部分从 future 的 released 中扣除
-            u.pendingToken = 0;
-            // 左边的 left 会通过增加 extractedToken 来代表已实际领取（getReleaseAmountToken 会用 extractedToken 抵扣）
-            // 这里不需要额外修改 releaseQuota，因为 releaseQuota 的 "已释放" 部分已在 stake 时被扣除
-            // 直接继续
-        }
+        require(total > 0, "NO_REWARD");
 
-        // 真正转账给用户
-        TransferHelper.safeTransfer(token, msg.sender, amountToken);
+        u.pending = 0;
+        u.farmDebt = u.amountNFT * perNftAward;
 
-        // 标记为已真实发放
-        u.extractedToken += amountToken;
+        TransferHelper.safeTransfer(USDT, msg.sender, total);
     }
 
-    function claimUSDT() external {
-        User storage u = userInfo[msg.sender];
-
-        uint256 amountUSDT = getAvailableAmountUSDT(msg.sender);
-        require(amountUSDT > 0, "No USDT available");
-
-        // 转账
-        TransferHelper.safeTransfer(USDT, msg.sender, amountUSDT);
-
-        // 将已结算到 now 的 USDT 清零（我们使用 pendingUSDT 来记录历史）
-        // 这里我们已把当前可领的都发给用户，因此 pendingUSDT = 0
-        u.pendingUSDT = 0;
-
-        // 更新 farmDebt 把当前基线拉到最新：nftQuantity * perNftAward
-        u.farmDebt = u.nftQuantity * perNftAward;
-    }
-
-    function getUserInfo(address user) 
-        external 
-        view 
-        returns (
-            uint256 nftQuantity,
-            uint256[] memory tokenIds,
-            uint256 releaseQuota,
-            uint256 stakingTime,
-            uint256 pendingToken,
-            uint256 pendingUSDT,
-            uint256 extractedToken,
-            uint256 farmDebt,
-            uint256 claimableToken,
-            uint256 availableUSDT
-        ) 
-    {
+    function getAwardUsdt(address user) public view returns (uint256) {
         User storage u = userInfo[user];
-        nftQuantity = u.nftQuantity;
-        tokenIds = u.tokenIds;
-        releaseQuota = u.releaseQuota;
-        stakingTime = u.stakingTime;
-        pendingToken = u.pendingToken;
-        pendingUSDT = u.pendingUSDT;
-        extractedToken = u.extractedToken;
-        farmDebt = u.farmDebt;
+        if (u.amountNFT == 0) return u.pending;
 
-        // 计算当前可领取
-        (, claimableToken) = getReleaseAmountToken(user);
-        availableUSDT = getAvailableAmountUSDT(user);
+        uint256 pending = u.amountNFT * perNftAward - u.farmDebt;
+        return u.pending + pending;
     }
 
-    function emergencyWithdraw(address _token, uint256 _amount, address _to) external onlyOwner {
-        TransferHelper.safeTransfer(_token, _to, _amount);
+    function getUserInfo(
+        address user
+    ) external view returns (
+        uint256 amountNFT,
+        uint256[] memory allOrders,
+        // uint256[] memory pendingOrders,
+        // uint256[] memory finishedOrders,
+        uint256 awardUSDT
+    ) {
+        User storage u = userInfo[user];
+
+        amountNFT = u.amountNFT;
+        allOrders = u.orderIds;
+        awardUSDT = getAwardUsdt(user);
+
     }
 
+    function isOrderFinished(uint256 orderId) public view returns (bool) {
+        return orderInfo[orderId].extracted >= orderInfo[orderId].tokenQuota;
+    }
 
 }

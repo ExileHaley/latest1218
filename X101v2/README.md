@@ -33,7 +33,8 @@ $ cast abi-encode "constructor(address,address,address)" 0xD4360fAE9a810Be17b5fC
 #### recharge contract:
 ### Nadi链测试
 #### recharge contract:0xD67831dbF3ab5c892d449cF51A1701F4CBeAFAA6
-
+#### usdt:0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5
+#### adx:0x68a4d37635cdB55AF61B8e58446949fB21f384e5
 
 ### Nadi链
 #### gas:0x0e7f2f2155199E2606Ce24C9b2C5C7C3D5960116

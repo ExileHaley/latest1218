@@ -29,17 +29,18 @@ $ forge verify-contract --chain-id 56 --compiler-version v0.8.30+commit.a1b79de6
 $ cast abi-encode "constructor(address,address,address)" 0xD4360fAE9a810Be17b5fC1edF12849675996f712 0x73832D01364c48e4b6C49B9ECBF07aB92852B67c 0x940FA6e4dCBBA8Fb25470663849B815a732a021C 
 ```
 
-### bsc链测试
-#### recharge contract:
-### Nadi链测试
-#### recharge contract:0x873133EFfBE61e395F9769C057E321E5222eABAb
+
+
 #### usdt:0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5
 #### adx:0x68a4d37635cdB55AF61B8e58446949fB21f384e5
 
+### bsc 链
+#### recharge:0x44132e2b86C566C136E894699b6c2aF5D5eA7498
+
 ### Nadi链
-#### gas:0x0e7f2f2155199E2606Ce24C9b2C5C7C3D5960116
-#### x101:0x8A0874d25759a29727a4BA7649f39F7Cb7E02650
-#### recharge contract:0x2BE505DF4d19Fc2b9D7854A922aAD70De230cdDF
+#### gas:0xCDc2580B36E746Beb3755a55043EBFA02714010f
+#### x101:0xc15E4aaf9180791C60C0a3906515f1c0C5199FD6
+#### recharge contract:0x5be240960c507F1f9425419512fd765732B0cf65
 ### recharge func list
 ```solidity
 //管理员方法，使用管理员地址操作，token代币地址，recipients该代币要分配的地址，rates按照地址设置比例，比如10%，就是100，分母是1000

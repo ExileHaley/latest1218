@@ -15,8 +15,12 @@ import {IUniswapV2Pair} from "./interfaces/IUniswapV2Pair.sol";
 
 
 contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard{
-    address public constant WBNB = 0xe901E30661dD4Fd238C4Bfe44b000058561a7b0E;
-    address public constant USDT = 0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5;
+    //nadi
+    // address public constant WBNB = 0xe901E30661dD4Fd238C4Bfe44b000058561a7b0E;
+    // address public constant USDT = 0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5;
+    //bsc
+    address public constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
+    address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
 
     enum Mark{INVAILD, ADD, REMOVE}
 
@@ -258,6 +262,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         uint256 lpSupply = IERC20(pair).totalSupply();
         require(lpSupply > 0,"Liquidity does not exist.");
         TransferHelper.safeTransferFrom(fromToken, from, address(this), fromAmount);
+
         TransferHelper.safeApprove(fromToken, uniswapV2Router, fromAmount);
         address[] memory path = new address[](2);
         path[0] = fromToken;
@@ -266,10 +271,11 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
             fromAmount, 
             0, 
             path, 
-            to, 
+            address(this), 
             block.timestamp + 30
         );
-
+        uint256 amountTo = IERC20(targetToken).balanceOf(address(this));
+        TransferHelper.safeTransfer(targetToken, to, amountTo);
         emit Exchange(remark, fromToken, fromAmount, targetToken, from, to);
 
     } 

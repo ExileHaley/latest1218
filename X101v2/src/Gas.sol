@@ -7,10 +7,11 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Gas is ERC20, Ownable{
 
-    address public x101;
+    address public specifySell;
+
 
     modifier onlyBurn() {
-        require(x101 == msg.sender, "Not permit");
+        require(specifySell == msg.sender, "Not permit");
         _;
     }
 
@@ -18,9 +19,9 @@ contract Gas is ERC20, Ownable{
         _mint(_initialRecipient, 3030000e18);
     }
 
-    function setX101Addr(address _x101) external onlyOwner{
-        require(_x101 != address(0),"Error addr.");
-        x101 = _x101;
+    function setSpecifySell(address _specifySell) external onlyOwner{
+        require(_specifySell != address(0),"Error addr.");
+        specifySell = _specifySell;
     }
 
     function mint(address to, uint256 amount) external onlyOwner{

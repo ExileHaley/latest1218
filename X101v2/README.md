@@ -46,8 +46,9 @@ $ cast abi-encode "constructor(address,address,address)" 0xD4360fAE9a810Be17b5fC
 #### recharge:0x44132e2b86C566C136E894699b6c2aF5D5eA7498
 
 ### Nadi链
-#### gas:0x3182C9662a220b0B1Bf0bfFa4F4B8321Ad77EF3D
-#### x101:0xc017F84b5e73a29cbA3F7Ea4B2f8d0CAb84743DF
+#### gas:0x5c16d6dC352FfCD8b723b15001f99858857cbB43
+#### x101:0xE9FB723E203Aa48ebD5b5C215891aD9b83Ffa64F
+#### specifySell(用于卖出x101):0x68f60E8E519C29aBf4A96fcE4FF9B6e3474bA295
 #### recharge contract:0x5be240960c507F1f9425419512fd765732B0cf65
 ### recharge func list
 ```solidity
@@ -76,4 +77,12 @@ function multiRecharge(
         string calldata remark
     ) external;
 
+```
+
+### specifySell func list
+```solidity
+//预计兑换结果，x101(amount)兑换adx的预计结果
+function getAmountAdxOut(uint256 amount) external view returns(uint256);
+//x101兑换adx执行，amount是x101的数量
+function sellForX101(uint256 amount) external
 ```

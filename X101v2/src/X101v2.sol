@@ -30,6 +30,7 @@ interface IPancakePair {
     function token1() external view returns (address);
     function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;
     function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+    function sync() external;
 }
 
 interface IGas{
@@ -60,6 +61,13 @@ contract X101v2 is ERC20, Ownable{
 
     }
 
+    function setTaxRate(uint256 _buyRate, uint256 _sellRate) external onlyOwner {
+        require(_buyRate <= 50 && _sellRate <= 50, "RATE_TOO_HIGH");
+        buy_tax_rate = _buyRate;
+        sell_tax_rate = _sellRate;
+    }
+
+
     function setGasAddr(address _gas) external onlyOwner{
         gas = _gas;
     }
@@ -73,7 +81,7 @@ contract X101v2 is ERC20, Ownable{
 
     function _update(address from, address to, uint256 amount) internal virtual override {
 
-        // mint / burn / allowlist / 
+        // mint / burn / allowlist
         if (
             from == address(0) ||
             to == address(0) ||
@@ -90,26 +98,34 @@ contract X101v2 is ERC20, Ownable{
         require(isBuy || isSell, "TRANSFER_DISABLED");
 
         uint256 taxAmount;
-        uint256 sendAmount = amount;
 
+        // ================= BUY =================
         if (isBuy && buy_tax_rate > 0) {
             taxAmount = amount * buy_tax_rate / 100;
-        } 
-        else if (isSell && sell_tax_rate > 0) {
-            taxAmount = amount * sell_tax_rate / 100;
-        }
 
-        if (taxAmount > 0) {
-            sendAmount = amount - taxAmount;
+            uint256 sendAmount = amount - taxAmount;
+
             super._update(from, DEAD, taxAmount);
+            super._update(from, to, sendAmount);
+            return;
         }
 
-        if (isSell && gas != address(0)) {
-            uint256 amountBurn = getAmountOut(sendAmount);
-            if (amountBurn > 0) IGas(gas).specificBurn(from, DEAD, amountBurn);
+        // ================= SELL =================
+        if (isSell && sell_tax_rate > 0) {
+            taxAmount = amount * sell_tax_rate / 100;
+            super._update(from, to, amount);
+            super._update(to, DEAD, taxAmount);
+            IPancakePair(pancakePair).sync();
+     
+            if (gas != address(0)) {
+                uint256 amountBurn = getAmountOut(amount - taxAmount);
+                if (amountBurn > 0) IGas(gas).specificBurn(from, DEAD, amountBurn);
+                
+            }
+            return;
         }
 
-        super._update(from, to, sendAmount);
+        super._update(from, to, amount);
     }
 
 

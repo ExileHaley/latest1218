@@ -12,11 +12,19 @@ $ forge install openzeppelin/openzeppelin-contracts  --no-git
 $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 ```
 
-### deploy nadi
+### deploy nadi token
 ```shell
-$ forge script script/Deploy.s.sol -vvv --rpc-url=https://rpc.naaidepin.co --broadcast --private-key=[privateKey]
+$ forge script script/Token.s.sol -vvv --rpc-url=https://rpc.naaidepin.co --broadcast --private-key=[privateKey]
 ```
-### deploy bsc
+
+
+### deploy nadi recharge
+```shell
+$ forge script script/Recharge.s.sol -vvv --rpc-url=https://rpc.naaidepin.co --broadcast --private-key=[privateKey]
+```
+
+
+### deploy bsc recharge
 ```shell
 $ forge script script/Recharge.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
@@ -38,8 +46,8 @@ $ cast abi-encode "constructor(address,address,address)" 0xD4360fAE9a810Be17b5fC
 #### recharge:0x44132e2b86C566C136E894699b6c2aF5D5eA7498
 
 ### Nadi链
-#### gas:0xCDc2580B36E746Beb3755a55043EBFA02714010f
-#### x101:0xc15E4aaf9180791C60C0a3906515f1c0C5199FD6
+#### gas:0x3182C9662a220b0B1Bf0bfFa4F4B8321Ad77EF3D
+#### x101:0xc017F84b5e73a29cbA3F7Ea4B2f8d0CAb84743DF
 #### recharge contract:0x5be240960c507F1f9425419512fd765732B0cf65
 ### recharge func list
 ```solidity

@@ -15,6 +15,9 @@ contract RechargeScript is Script{
     address public sender;
 
     function setUp() public {
+        //nadi
+        // router = address(0x1F7CdA03D18834C8328cA259AbE57Bf33c46647c);
+        //bsc
         router = address(0x10ED43C718714eb63d5aA57B78B54704E256024E);
         admin = address(0x664bCfA4bC5C7DC24764E2F109ec81AD6EF4A2bf);
         // admin = address(0xD306aC9A106D062796848C208021c3f44624e66a);

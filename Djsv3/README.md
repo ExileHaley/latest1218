@@ -14,7 +14,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 
 ### deploy wallet
 ```shell
-$ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
+$ forge script script/DeployNode.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 
 ### upgrade finance
@@ -57,7 +57,7 @@ t3: 下一次 getShareLevelAward
 #### djsc token:0x101FF1333e9776D2D39a400287c945221a20d676
 
 #### liquidityManager contract:0x76076ED15b607c75Ed950084283cA342d5CbF9F9
-#### nodeDividends contract:0x72B25b3F17598AAdeB315Ea82Bbaa7804374bA98
+#### nodeDividends contract:0x9c4b1Fd48A9dF5D7dc748164fF49cbCEebE9c917
 #### finance contract:0xeA7eB2F853b23450798a3A98c94C8fd6Cd029dD1
 
 ### finance func list

@@ -122,6 +122,14 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         pause = isPause;
     }
 
+    function setNodeDividends(address _nodeDividends) external onlyOwner{
+        nodeDividends = _nodeDividends;
+    }
+
+    function setLiquidityManager(address _liquidityManager) external onlyOwner{
+        liquidityManager = _liquidityManager;
+    }
+
     function emergencyWithdraw(address _token, uint256 _amount, address _to) external onlyAdmin {
         TransferHelper.safeTransfer(_token, _to, _amount);
     }

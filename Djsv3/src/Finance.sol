@@ -47,6 +47,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
     // address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
     address public constant USDT = 0x3c83065B83A8Fd66587f330845F4603F7C49275c;
     address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
+    uint256 public constant MULTIPLE = 3;
     //个人数据存储
     mapping(address => Process.User) public userInfo;
     mapping(address => Process.Referral) public referralInfo;
@@ -166,7 +167,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         TransferHelper.safeTransferFrom(USDT, msg.sender, liquidityManager, amountUSDT - amountUSDTToNode);
         TransferHelper.safeTransferFrom(USDT, msg.sender, nodeDividends, amountUSDTToNode);
         //处理node分红1%，子币销毁1%，添加流动性98%
-        ILiquidity(liquidityManager).swapForSubTokenToBurn(amountToBurnSubToken);
+        // ILiquidity(liquidityManager).swapForSubTokenToBurn(amountToBurnSubToken);
         if(nodeDividends != address(0)) INodeDividends(nodeDividends).updateFarm(amountUSDTToNode);
         //剩余的98%用于添加流动性
         ILiquidity(liquidityManager).addLiquidity(amountUSDT - amountUSDTToNode - amountToBurnSubToken);
@@ -176,12 +177,8 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         updateShareFram(totalStakedUsdt);
         if(r.level == Process.Level.SHARE) _settleShareReward(msg.sender);
 
-        //根据数量设置倍数 multiple
+        //质押数量更新
         u.stakingUsdt += amountUSDT;
-        uint256 newMultiple = u.stakingUsdt > 3000e18 ? 3 : 2;
-        if (u.multiple != newMultiple) {
-            u.multiple = newMultiple;
-        }
         //更新总质押totalStakedUsdt
         totalStakedUsdt += amountUSDT;
 
@@ -236,7 +233,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         //initialCode不受最大收益限制
         if(user == initialCode) return totalAward;
         // 4. 收益上限 = stakingUsdt * multiple
-        uint256 maxAward = u.stakingUsdt * u.multiple;
+        uint256 maxAward = u.stakingUsdt * MULTIPLE;
 
         // 5. 用户剩余额度
         if (u.extracted >= maxAward) return 0;
@@ -432,7 +429,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
     function getInvalidStaking(address user) public view returns(uint256){
         Process.User storage u = userInfo[user];
         uint256 totalAward = u.pendingProfit + getUserStakingAward(user) + getUserShareLevelAward(user) / decimals + u.extracted;
-        if (totalAward > u.stakingUsdt * u.multiple) return u.stakingUsdt;
+        if (totalAward > u.stakingUsdt * MULTIPLE) return u.stakingUsdt;
         else return 0; 
 
     }
@@ -452,7 +449,8 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         level = r.level;
         recommender = r.recommender;
         stakingUsdt = u.stakingUsdt;
-        multiple = u.multiple;
+        multiple = MULTIPLE;
+        
 
         // 当前可提取总收益
         totalAward = getUserAward(user);

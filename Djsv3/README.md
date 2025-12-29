@@ -17,6 +17,11 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 
+### upgrade finance
+```shell
+$ forge script script/UpgradeFinance.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
+```
+
 ### 查看未执行执行nonce
 ```shell
 $ cast nonce [wallet-address] --rpc-url https://bsc.blockrazor.xyz

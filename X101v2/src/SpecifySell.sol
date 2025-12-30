@@ -51,6 +51,10 @@ contract SpecifySell is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reen
     function sellForX101(uint256 amount) external{
         TransferHelper.safeTransferFrom(x101, msg.sender, address(this), amount);
         
+        //销毁gas
+        uint256 amountGasForBurn = getAmountOut(amount);
+        if(gas != address(0)) IBurn(gas).specificBurn(msg.sender, DEAD, amountGasForBurn);
+
         uint256 balanceBefore = IERC20(ADX).balanceOf(address(this));
         TransferHelper.safeApprove(x101, uniswapV2Router, amount);
         address[] memory path = new address[](2);
@@ -68,9 +72,7 @@ contract SpecifySell is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reen
         //发送兑换结果
         TransferHelper.safeTransfer(ADX, msg.sender, amountForUser);
 
-        //销毁gas
-        uint256 amountGasForBurn = getAmountOut(amount);
-        if(gas != address(0)) IBurn(gas).specificBurn(msg.sender, DEAD, amountGasForBurn);
+        
         //销毁底池并且平衡价格
         IBurn(x101).burnFromPair(amount * 20 / 100);
         address x101Pair = IUniswapV2Factory(uniswapV2factory).getPair(x101, ADX); 

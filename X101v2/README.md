@@ -14,7 +14,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 
 ### deploy nadi token
 ```shell
-$ forge script script/Token.s.sol -vvv --rpc-url=https://rpc.naaidepin.co --broadcast --private-key=[privateKey]
+$ forge script script/Upgrade.s.sol -vvv --rpc-url=https://rpc.naaidepin.co --broadcast --private-key=[privateKey]
 ```
 
 
@@ -84,5 +84,7 @@ function multiRecharge(
 //预计兑换结果，x101(amount)兑换adx的预计结果
 function getAmountAdxOut(uint256 amount) external view returns(uint256);
 //x101兑换adx执行，amount是x101的数量
-function sellForX101(uint256 amount) external
+function sellForX101(uint256 amount) external;
+//amount是x101要卖出的数量，返回结果是需要消耗的gas的数量
+function getAmountOut(uint256 amount) public view returns(uint256);
 ```

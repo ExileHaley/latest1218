@@ -97,18 +97,18 @@ function getReferralAwardRecords(address user) external view returns(Record[] me
 function getDirectReferrals(address user) external view returns(address[] memory);
 //获取用户基础信息
 function getUserInfoBasic(address user) public view returns(
-        Process.Level level, //等级
+        Process.Level level, //等级，D0-D5、股东等级
         address recommender, //邀请人
-        uint256 stakingUsdt, //理财usdt数量
-        uint256 multiple,    //倍数
-        uint256 totalAward,  //可提取收益
-        uint256 shareAward   //股东收益
+        uint256 stakingUsdt, //理财usdt数量，质押的数量
+        uint256 multiple,    //倍数， 3倍出局
+        uint256 totalAward,  //可提取收益， 当前用户可以提取的收益
+        uint256 shareAward   //股东收益， 只用于计算展示股东收益
 );
 //获取用户的邀请信息
 function getUserInfoReferral(address user) external view returns (
         uint256 referralNum, //邀请人数。只有质押后才会被计算为有效邀请
-        uint256 performance, //当前用户的伞下业绩，单位usdt
-        uint256 referralAward,//当前用户的邀请奖励，单位usdt
+        uint256 performance, //当前用户的伞下业绩，单位usdt ，个人业绩
+        uint256 referralAward,//当前用户的邀请奖励，单位usdt ，通过邀请奖励获得的usdt
         uint256 subCoinQuota, //当前用户的子币额度，单位是usdt
         bool    isMigration //当前用户是否已经迁移，这个忽略
 );

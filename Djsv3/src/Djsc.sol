@@ -26,8 +26,7 @@ interface IUniswapV2Router02 {
 contract Djsc is ERC20, Ownable{
     event SwapAndSendTax(address recipient, uint256 tokensSwapped);
     IUniswapV2Router02 public pancakeRouter = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
-    // address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
-    address public constant USDT = 0x3c83065B83A8Fd66587f330845F4603F7C49275c;
+  
     uint256 public constant PROFIT_TAX_RATE = 10;
     uint256 public sell_tax_rate = 3;
     uint256 public buy_tax_rate = 3;
@@ -36,6 +35,7 @@ contract Djsc is ERC20, Ownable{
     address public profitFee;
 
     address public pancakePair;
+    address public USDT;
     bool    private swapping;
     mapping(address => bool) public allowlist;
     mapping(address => uint256) public totalCostUsdt;
@@ -44,12 +44,11 @@ contract Djsc is ERC20, Ownable{
         address[4] memory addrs, 
         address _sellFee, 
         address _buyFee, 
-        address _profitFee
+        address _profitFee,
+        address _USDT
     )ERC20("DJSC","DJSC")Ownable(msg.sender){
         allocate(addrs);
-        pancakePair = IPancakeFactory(pancakeRouter.factory())
-            .createPair(address(this), USDT);
-        
+        USDT = _USDT;
         sellFee = _sellFee;
         buyFee = _buyFee;
         profitFee = _profitFee;
@@ -57,6 +56,9 @@ contract Djsc is ERC20, Ownable{
         allowlist[_sellFee] = true;
         allowlist[_buyFee] = true;
         allowlist[_profitFee] = true;
+
+        pancakePair = IPancakeFactory(pancakeRouter.factory())
+            .createPair(address(this), USDT);
     }
 
     function allocate(address[4] memory addrs) private{

@@ -99,10 +99,10 @@ contract FinanceTest is Test{
 
         //deploy
         vm.startPrank(owner);
-        djs = new Djs(initialRecipient, marketingForDjs, wallet);
+        djs = new Djs(initialRecipient, marketingForDjs, wallet, USDT);
         djs.setTradingOpen(true);
         address[4] memory addrs = [technology, foundation, marketingForDjsc, pot];
-        djsc = new Djsc(addrs, sellFee, buyFee, profitFee);
+        djsc = new Djsc(addrs, sellFee, buyFee, profitFee, USDT);
         
         //deploy nodeDividends
         NodeDividends nodeImpl = new NodeDividends();

@@ -195,6 +195,15 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         }
     }
 
+    function getAmountsOut(uint256 amountUSDT) external view returns (uint256) {
+        address[] memory path = new address[](2);
+        path[0] = USDT;
+        path[1] = subToken;
+
+        uint256[] memory amounts = pancakeRouter.getAmountsOut(amountUSDT, path);
+        return amounts[1];
+    }
+
 
     function emergencyWithdraw(address _token, uint256 _amount, address _to) external onlyOwner {
         TransferHelper.safeTransfer(_token, _to, _amount);

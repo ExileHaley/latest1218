@@ -22,7 +22,7 @@ contract FinanceView {
             uint256 stakingAward,
             uint256 extractable,
             uint256 referralAward,
-            uint256 shareAward
+            uint256 shareAward   
         )
     {   
         (stakingUsdt,,,extracted,) = finance.userInfo(user);
@@ -47,10 +47,13 @@ contract FinanceView {
             address recommender,
             uint256 referralNum,
             uint256 performance,
-            uint256 subCoinQuota
+            uint256 subCoinQuota,
+            uint256 directNum
         )
     {
         (recommender,level,referralNum,performance,,,subCoinQuota,) = finance.referralInfo(user);
+        address[] memory directs = finance.getDirectReferralAddr(user);
+        directNum = directs.length;
     }
 
     // function getDirectReferralInfo(address user)

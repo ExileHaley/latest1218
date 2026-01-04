@@ -6,4 +6,5 @@ interface ILiquidityManager{
     // function swapForSubTokenToBurn(uint256 amountUSDT) external;
     function addLiquidity(uint256 amountUSDT) external;
     function acquireSpecifiedUsdt(address to, uint256 amountUSDT) external;
+    function getAmountsOut(uint256 amountUSDT) external view returns (uint256);
 }

@@ -17,6 +17,10 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 
+## 更新finance的abi，finance新增了getAmountOut方法
+## 更新financeView的abi以及合约地址，getUserInfoReferral方法里新增了一个返回字段表示直推人数directNum
+
+
 ### contract address
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
@@ -38,7 +42,7 @@ $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --b
 #### finance(finance.json):0xB47f3802b718215847F53076276653a6CbdaB415
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
-#### financeView(financeView.json):0x4754fd62BaF1470bE92F0D2266B193805D4eBA26
+#### financeView(financeView.json):0xD88d72bd131A6dB5A40CB3402D786B63326F9C73
 -----------------------------------------------------------------------------
 -----------------------------------------------------------------------------
 #### liquidityManager:0xA0c9FF380fFCBF3bedb243A0b3107c3495f76ddC
@@ -93,7 +97,8 @@ function swapSubToken(uint256 amountUSDT) external;
 //管理员方法，用于提取指定数量的token到指定地址
 function emergencyWithdraw(address _token, uint256 _amount, address _to) external;
 
-
+//amountUSDT传入usdt的数量，返回预估兑换djsc的数量
+function getAmountOut(uint256 amountUSDT) external view returns(uint256);
 
 ```
 
@@ -117,6 +122,7 @@ function getUserInfoReferral(address user) external view returns (
         uint256 referralNum,   //当前用户总共邀请了多少人
         uint256 performance,   //当前用户伞下邀请的总业绩
         uint256 subCoinQuota,  //当前用户的子币额度
+        uint256 directNum     //直推人数
 );
 ```
 

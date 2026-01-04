@@ -11,6 +11,7 @@ import {ReentrancyGuard} from "./libraries/ReentrancyGuard.sol";
 import {Errors} from "./libraries/Errors.sol";
 import {Process} from "./libraries/Process.sol";
 import {ILiquidityManager} from "./interfaces/ILiquidityManager.sol";
+import {IUniswapV2Router02} from "./interfaces/IUniswapV2Router02.sol";
 
 interface IDjsv1 {
     function userInfo(address user) 
@@ -502,6 +503,9 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         return directReferrals[user];
     }
 
+    function getAmountOut(uint256 amountUSDT) external view returns(uint256){
+        return ILiquidityManager(liquidityManager).getAmountsOut(amountUSDT);
+    }
 
 
     // // 返回用户基础信息 + 当前可提取收益 + Share等级收益

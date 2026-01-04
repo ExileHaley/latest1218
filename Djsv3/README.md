@@ -29,13 +29,13 @@ $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --b
 -----------------------------------------------------------------------------
 #### Djsc`s pancakePair:0x3e7Bf7ac5623A5517D41f921F6a26Ea01d1B18f2
 -----------------------------------------------------------------------------
-#### finance:0x751f55588377a6F7614CA815661B84A9c5268083
+#### finance(finance.json):0x751f55588377a6F7614CA815661B84A9c5268083
 -----------------------------------------------------------------------------
-#### financeView:0x4aBC823bc9AEe39303560BF2884434e53bA37C76
+#### financeView(financeView.json):0x4aBC823bc9AEe39303560BF2884434e53bA37C76
 -----------------------------------------------------------------------------
 #### liquidityManager:0x62bEB2520F01Ee4C92821255969126c7Aa14AB88
 -----------------------------------------------------------------------------
-#### nodeDividends:0x3caf7720fbD456eB8456e1C5F04a9d3b67340dA3
+#### nodeDividends(nodeDividends.json):0x3caf7720fbD456eB8456e1C5F04a9d3b67340dA3
 
 
 ### finance func list

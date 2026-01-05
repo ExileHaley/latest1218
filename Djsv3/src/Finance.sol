@@ -114,7 +114,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         liquidityManager = _liquidityManager;
         recipientForBurn = _recipientForBurn;
         decimals = 1e10;
-        perSecondStakedAeward = uint256(12e18 * decimals / 1000e18 / 86400); //这里得计算一下每秒奖励的代币数
+        perSecondStakedAeward = uint256(10e18 * decimals / 1000e18 / 86400); //这里得计算一下每秒奖励的代币数
         subCoinQuotas[Process.Level.V1] = 100e18;
         subCoinQuotas[Process.Level.V2] = 300e18;
         subCoinQuotas[Process.Level.V3] = 500e18;
@@ -211,20 +211,21 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         if (u.stakingUsdt == 0) revert Errors.NoStake();
 
         // 1️⃣ 先计算本次 staking 收益（当前用户到现在的 staking 收益）
-        uint256 stakingAward = getUserStakingAward(msg.sender);
+        // uint256 stakingAward = getUserStakingAward(msg.sender);
 
         // 2️⃣ 结算 staking 收益 → 累加到 pendingProfit 并更新 stakingTime
         _settleStakingReward(msg.sender);
 
         // 3️⃣ 上级奖励按本次 staking 收益分发
-        _processReferralAwards(msg.sender, stakingAward);
+        _processReferralAwards(msg.sender, u.pendingDividend);
 
         // 4️⃣ 计算用户可提取总额（包括 pendingProfit）
         uint256 amount = getUserAward(msg.sender);
         if (amount == 0) revert Errors.NoReward();
 
         // 5️⃣ 更新用户状态
-        u.pendingProfit = 0;        // 已计入 amount
+        u.pendingDividend = 0;
+        u.pendingBonus = 0;
         u.extracted += amount;      // 累加提取总额
 
         // 6️⃣ 发放 USDT
@@ -245,7 +246,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
 
     function getUserStakingAward(address user) public view returns(uint256){
         Process.User memory u = userInfo[user];
-        return (block.timestamp - u.stakingTime) * perSecondStakedAeward * u.stakingUsdt / decimals;
+        return (block.timestamp - u.stakingTime) * perSecondStakedAeward * u.stakingUsdt / decimals + u.pendingDividend;
     }
 
     function getUserAward(address user) public view returns(uint256){
@@ -257,7 +258,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         uint256 stakeAward = getUserStakingAward(user);
 
         // 3. 用户当前总未提取收益
-        uint256 totalAward = u.pendingProfit + stakeAward;
+        uint256 totalAward = u.pendingBonus +stakeAward;
 
         //initialCode不受最大收益限制
         if(user == initialCode) return totalAward;
@@ -306,7 +307,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
 
         // 累加到 pending
         if (reward > 0) {
-            u.pendingProfit += reward;
+            u.pendingDividend += reward;
         }
 
         // 重置质押时间
@@ -376,7 +377,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
             if (reward == 0) continue;
 
             r.shareAward += reward;
-            u.pendingProfit += reward;
+            u.pendingBonus += reward;
 
             awardRecords[s].push(Process.Record({
                 category:Process.Category.SHARE_LEVEL,
@@ -404,7 +405,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
 
             if (paid) {
                 levelPaid[idx] = true;
-                u.pendingProfit += reward;
+                u.pendingBonus += reward;
                 r.referralAward += reward;
                 totalUsed += reward;
 
@@ -428,7 +429,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         uint256 reward = amount * 10 / 100;
         Process.User storage u = userInfo[direct];
         Process.Referral storage r = referralInfo[direct];
-        u.pendingProfit += reward;
+        u.pendingBonus += reward;
         r.referralAward += reward;
 
         awardRecords[direct].push(Process.Record({
@@ -456,7 +457,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
             Process.User storage u = userInfo[initialCode];
             Process.Referral storage r = referralInfo[initialCode];
 
-            u.pendingProfit += remaining;
+            u.pendingBonus += remaining;
             r.referralAward += remaining;
 
             awardRecords[initialCode].push(Process.Record({

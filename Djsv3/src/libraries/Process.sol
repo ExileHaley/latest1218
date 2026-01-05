@@ -6,11 +6,12 @@ library Process {
     enum Category {DIRECT, NORMAL_LEVEL, SHARE_LEVEL}
 
     struct User{
-        uint256 stakingUsdt; //质押数量
-        uint256 stakingTime; //质押时间
-        uint256 pendingProfit; //未提取收益
-        uint256 extracted;     //已提取收益   
-        bool    addSubCoinQuota; //大于1000u质押的用户有且只有给一次10U子币额度
+        uint256 stakingUsdt;        //质押数量
+        uint256 stakingTime;        //质押时间
+        uint256 pendingDividend;    //质押收益结余，计算使用
+        uint256 pendingBonus;       //邀请奖励+share奖励，计算使用
+        uint256 extracted;          //已提取收益   
+        bool    addSubCoinQuota;    //大于1000u质押的用户有且只有给一次10U子币额度
     }
 
     struct Referral{

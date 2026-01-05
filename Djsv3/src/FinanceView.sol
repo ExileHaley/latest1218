@@ -25,7 +25,7 @@ contract FinanceView {
             uint256 shareAward   
         )
     {   
-        (stakingUsdt,,,extracted,) = finance.userInfo(user);
+        (stakingUsdt,,,,extracted,) = finance.userInfo(user);
         (,,,,referralAward,shareAward,,) = finance.referralInfo(user);
 
         //剩余待释放

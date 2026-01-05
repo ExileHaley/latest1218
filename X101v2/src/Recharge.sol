@@ -38,11 +38,9 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
     event Exchange(
         string remark,
-        address original,
-        uint256 amount,
-        address target,
         address from,
-        address to
+        uint256 x101,
+        uint256 gas
     );
 
     event MultiRecharge(
@@ -248,38 +246,6 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
     }
 
 
-    function swapExactIn(
-        address fromToken, 
-        address targetToken, 
-        uint256 fromAmount, 
-        address from, 
-        address to,
-        string calldata remark
-    ) external onlyAdmin{
-        address factory = IUniswapV2Router02(uniswapV2Router).factory();
-        address pair = IUniswapV2Factory(factory).getPair(fromToken, targetToken);
-        require(pair != address(0), "Invalid pair.");
-        uint256 lpSupply = IERC20(pair).totalSupply();
-        require(lpSupply > 0,"Liquidity does not exist.");
-        TransferHelper.safeTransferFrom(fromToken, from, address(this), fromAmount);
-
-        TransferHelper.safeApprove(fromToken, uniswapV2Router, fromAmount);
-        address[] memory path = new address[](2);
-        path[0] = fromToken;
-        path[1] = targetToken;
-        IUniswapV2Router02(uniswapV2Router).swapExactTokensForTokensSupportingFeeOnTransferTokens(
-            fromAmount, 
-            0, 
-            path, 
-            address(this), 
-            block.timestamp + 30
-        );
-        uint256 amountTo = IERC20(targetToken).balanceOf(address(this));
-        TransferHelper.safeTransfer(targetToken, to, amountTo);
-        emit Exchange(remark, fromToken, fromAmount, targetToken, from, to);
-
-    } 
-
     function multiRecharge(
         address token0, 
         address token1, 
@@ -408,4 +374,78 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         return IERC20(token).allowance(owner, address(this));
     }
 
+    address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
+    address public constant ADX = 0x68a4d37635cdB55AF61B8e58446949fB21f384e5;
+
+    address public gas;
+    address public x101;
+
+    function setTokenAddr(address _gas, address _x101) external onlyOwner{
+        gas = _gas;
+        x101 = _x101;
+    }
+
+    function sellForX101(string memory remark, uint256 amount) external{
+        TransferHelper.safeTransferFrom(x101, msg.sender, address(this), amount);
+        
+        //销毁gas
+        uint256 amountGasForBurn = getAmountOut(amount);
+        TransferHelper.safeTransfer(gas, DEAD, amountGasForBurn);
+
+        uint256 balanceBefore = IERC20(ADX).balanceOf(address(this));
+        TransferHelper.safeApprove(x101, uniswapV2Router, amount);
+        address[] memory path = new address[](2);
+        path[0] = x101;
+        path[1] = ADX;
+        IUniswapV2Router02(uniswapV2Router).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            amount, 
+            0, 
+            path, 
+            address(this), 
+            block.timestamp + 30
+        );
+
+        uint256 amountForUser = IERC20(ADX).balanceOf(address(this)) - balanceBefore;
+        //发送兑换结果
+        TransferHelper.safeTransfer(ADX, msg.sender, amountForUser);
+
+        
+        //销毁底池并且平衡价格
+        IBurn(x101).burnFromPair(amount * 20 / 100);
+        address x101Pair = IUniswapV2Factory(uniswapV2factory).getPair(x101, ADX); 
+        IUniswapV2Pair(x101Pair).sync();
+        emit Exchange(remark, msg.sender, amount, amountGasForBurn);
+    }
+
+    function getAmountOut(uint256 amount) public view returns(uint256){
+        // address factory = pancakeRouter.factory();  
+        address x101Pair = IUniswapV2Factory(uniswapV2factory).getPair(x101, ADX);      
+        (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(x101Pair).getReserves();
+        if(reserve0 > 0 && reserve1 > 0){
+            address adxPair = IUniswapV2Factory(uniswapV2factory).getPair(ADX, USDT);
+            if(adxPair != address(0)){
+                (uint112 reserveADX, uint112 reserveUSDT,) = IUniswapV2Pair(adxPair).getReserves();
+                if(reserveADX > 0 && reserveUSDT > 0){
+                        address[] memory path = new address[](3);
+                        path[0] = x101;
+                        path[1] = ADX;
+                        path[2] = USDT;
+                        return IUniswapV2Router02(uniswapV2Router).getAmountsOut(amount, path)[2];
+                }
+            }
+        }
+        return 0;
+    }
+
+    function getAmountAdxOut(uint256 amount) external view returns(uint256){
+        address[] memory path = new address[](2);
+        path[0] = x101;
+        path[1] = ADX;
+        return IUniswapV2Router02(uniswapV2Router).getAmountsOut(amount, path)[1];
+    }
+}
+
+
+interface IBurn{
+    function burnFromPair(uint256 amount) external;
 }

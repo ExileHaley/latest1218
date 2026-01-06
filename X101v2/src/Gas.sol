@@ -7,9 +7,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Gas is ERC20, Ownable{
 
-    constructor(address _recharge)ERC20("Gas","GAS")Ownable(msg.sender){
-        _mint(_recharge, 3030000e18);
-    }
+    constructor()ERC20("Gas","GAS")Ownable(msg.sender){}
 
     function mint(address to, uint256 amount) external onlyOwner{
         require(to != address(0), "Error addr.");

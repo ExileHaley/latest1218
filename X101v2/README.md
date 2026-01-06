@@ -18,18 +18,6 @@ $ forge script script/Upgrade.s.sol -vvv --rpc-url=https://rpc.naaidepin.co --br
 ```
 
 
-### deploy nadi recharge
-```shell
-$ forge script script/Recharge.s.sol -vvv --rpc-url=https://rpc.naaidepin.co --broadcast --private-key=[privateKey]
-```
-
-
-### deploy bsc recharge
-```shell
-$ forge script script/Recharge.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
-```
-
-
 ### verify contract
 ```shell
 $ forge verify-contract --chain-id 56 --compiler-version v0.8.30+commit.a1b79de6 0x7D5014e549E83F2Abb1F346caCd9773245D51923 src/Skp.sol:Skp  --constructor-args 0x000000000000000000000000d4360fae9a810be17b5fc1edf12849675996f71200000000000000000000000073832d01364c48e4b6c49b9ecbf07ab92852b67c000000000000000000000000940fa6e4dcbba8fb25470663849b815a732a021c --etherscan-api-key Y43WNBZNXWR5V4AWQKGAQ9RCQEXTUHK88V
@@ -46,10 +34,10 @@ $ cast abi-encode "constructor(address,address,address)" 0xD4360fAE9a810Be17b5fC
 #### recharge:0x44132e2b86C566C136E894699b6c2aF5D5eA7498
 
 ### Nadi链
-#### gas:0x5c16d6dC352FfCD8b723b15001f99858857cbB43
-#### x101:0xE9FB723E203Aa48ebD5b5C215891aD9b83Ffa64F
-#### specifySell(用于卖出x101):0x68f60E8E519C29aBf4A96fcE4FF9B6e3474bA295
+#### gas:0x3c83065B83A8Fd66587f330845F4603F7C49275c
+#### x101:0x6a675a7ed2C3761dA38dbcbF82cDbA5e29e540B9
 #### recharge contract:0x5be240960c507F1f9425419512fd765732B0cf65
+
 ### recharge func list
 ```solidity
 //管理员方法，使用管理员地址操作，token代币地址，recipients该代币要分配的地址，rates按照地址设置比例，比如10%，就是100，分母是1000
@@ -77,14 +65,10 @@ function multiRecharge(
         string calldata remark
     ) external;
 
-```
-
-### specifySell func list
-```solidity
 //预计兑换结果，x101(amount)兑换adx的预计结果
 function getAmountAdxOut(uint256 amount) external view returns(uint256);
 //x101兑换adx执行，amount是x101的数量
-function sellForX101(uint256 amount) external;
+function sellForX101(string memory remark, uint256 amount) external;
 //amount是x101要卖出的数量，返回结果是需要消耗的gas的数量
 function getAmountOut(uint256 amount) public view returns(uint256);
 ```

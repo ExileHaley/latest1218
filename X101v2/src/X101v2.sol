@@ -44,7 +44,7 @@ contract X101v2 is ERC20, Ownable{
     uint256 public  buy_tax_rate = 100;
 
     address public pancakePair;
-    address public specifySell;
+    address public recharge;
 
     mapping(address => bool) public allowlist;
 
@@ -56,7 +56,7 @@ contract X101v2 is ERC20, Ownable{
     }
 
     modifier onlyBurn() {
-        require(specifySell == msg.sender, "NOT_PERMIT.");
+        require(recharge == msg.sender, "NOT_PERMIT.");
         _;
     }
 
@@ -66,10 +66,10 @@ contract X101v2 is ERC20, Ownable{
     }
 
 
-    function setSpecifySell(address _specifySell) external onlyOwner{
-        require(_specifySell != address(0),"Error addr.");
-        specifySell = _specifySell;
-        allowlist[_specifySell] = true;
+    function setRecharge(address _recharge) external onlyOwner{
+        require(_recharge != address(0),"Error addr.");
+        recharge = _recharge;
+        allowlist[_recharge] = true;
     }
 
 

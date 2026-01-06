@@ -16,11 +16,11 @@ import {IUniswapV2Pair} from "./interfaces/IUniswapV2Pair.sol";
 
 contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard{
     //nadi
-    // address public constant WBNB = 0xe901E30661dD4Fd238C4Bfe44b000058561a7b0E;
-    // address public constant USDT = 0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5;
-    //bsc
-    address public constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
-    address public constant USDT = 0x55d398326f99059fF775485246999027B3197955;
+    address  constant WBNB = 0xe901E30661dD4Fd238C4Bfe44b000058561a7b0E;
+    address  constant USDT = 0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5;
+    // //bsc
+    // address  constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
+    // address  constant USDT = 0x55d398326f99059fF775485246999027B3197955;
 
     enum Mark{INVAILD, ADD, REMOVE}
 
@@ -70,11 +70,11 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         uint256 amount;
     }
 
-    address public uniswapV2Router;
-    address public uniswapV2factory;
-    address public admin;
-    address public recipient;
-    address public sender;
+    address  uniswapV2Router;
+    address  uniswapV2factory;
+    address  admin;
+    address  recipient;
+    address  sender;
     
     receive() external payable {
         revert("NO_DIRECT_SEND");
@@ -128,8 +128,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         uint256 amount0
     ) external view returns (uint256) {
 
-        address factory = IUniswapV2Router02(uniswapV2Router).factory();
-        address pair = IUniswapV2Factory(factory).getPair(token0, token1);
+        address pair = IUniswapV2Factory(uniswapV2factory).getPair(token0, token1);
 
         // pair 不存在
         if (pair == address(0)) {
@@ -186,8 +185,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
             block.timestamp
         );
 
-        address factory = IUniswapV2Router02(uniswapV2Router).factory();
-        address pair = IUniswapV2Factory(factory).getPair(token0, token1);
+        address pair = IUniswapV2Factory(uniswapV2factory).getPair(token0, token1);
 
         emit Liquidity(remark, msg.sender, token0, amountA, token1, amountB, pair, liquidity, Mark.ADD);
     }
@@ -225,8 +223,8 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         uint256 amount,
         address to
     ) internal returns (address pair, uint amountA, uint amountB) {
-        address factory = IUniswapV2Router02(uniswapV2Router).factory();
-        pair = IUniswapV2Factory(factory).getPair(token0, token1);
+
+        pair = IUniswapV2Factory(uniswapV2factory).getPair(token0, token1);
         require(pair != address(0), "Invalid pair.");
 
         uint256 lpBalance = IERC20(pair).balanceOf(address(this));
@@ -369,16 +367,15 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         // 如果两个交易对都不存在，返回 0
         return (address(0), 0);
     }
+    // function getAllowance(address token, address owner) public view  returns (uint256){
+    //     return IERC20(token).allowance(owner, address(this));
+    // }
 
-    function getAllowance(address token, address owner) public view  returns (uint256){
-        return IERC20(token).allowance(owner, address(this));
-    }
+    address  constant DEAD = 0x000000000000000000000000000000000000dEaD;
+    address  constant ADX = 0x68a4d37635cdB55AF61B8e58446949fB21f384e5;
 
-    address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
-    address public constant ADX = 0x68a4d37635cdB55AF61B8e58446949fB21f384e5;
-
-    address public gas;
-    address public x101;
+    address  gas;
+    address  x101;
 
     function setTokenAddr(address _gas, address _x101) external onlyOwner{
         gas = _gas;
@@ -417,25 +414,19 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         emit Exchange(remark, msg.sender, amount, amountGasForBurn);
     }
 
-    function getAmountOut(uint256 amount) public view returns(uint256){
-        // address factory = pancakeRouter.factory();  
-        address x101Pair = IUniswapV2Factory(uniswapV2factory).getPair(x101, ADX);      
-        (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(x101Pair).getReserves();
-        if(reserve0 > 0 && reserve1 > 0){
-            address adxPair = IUniswapV2Factory(uniswapV2factory).getPair(ADX, USDT);
-            if(adxPair != address(0)){
-                (uint112 reserveADX, uint112 reserveUSDT,) = IUniswapV2Pair(adxPair).getReserves();
-                if(reserveADX > 0 && reserveUSDT > 0){
-                        address[] memory path = new address[](3);
-                        path[0] = x101;
-                        path[1] = ADX;
-                        path[2] = USDT;
-                        return IUniswapV2Router02(uniswapV2Router).getAmountsOut(amount, path)[2];
-                }
-            }
+    function getAmountOut(uint256 amount) public view returns (uint256) {
+        address[] memory path = new address[](3);
+        path[0] = x101;
+        path[1] = ADX;
+        path[2] = USDT;
+
+        try IUniswapV2Router02(uniswapV2Router).getAmountsOut(amount, path) returns (uint[] memory amounts) {
+            return amounts[2];
+        } catch {
+            return 0;
         }
-        return 0;
     }
+
 
     function getAmountAdxOut(uint256 amount) external view returns(uint256){
         address[] memory path = new address[](2);

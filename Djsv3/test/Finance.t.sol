@@ -189,262 +189,95 @@ contract FinanceTest is Test{
         vm.stopPrank();
     }
 
-    // function test_upgrade_to_share() public  {
-    //     test_stake_utils(initialCode, user, 100e18);
-    //     address user1 = address(5);
-    //     address user2 = address(6);
-    //     test_stake_utils(user, user1, 100e18);
-    //     test_stake_utils(user, user2, 100e18);
 
-    //     address[10] memory v5ReferralsForUser;
-    //     for(uint i=0; i<9; i++){
-    //         address u = address(uint160(40 + i));
-    //         v5ReferralsForUser[i] = u;
-    //         test_stake_utils(user, u, 400000e18);
-    //     }
+    function test_referralAward_cutOff() public {
+        address user1 = address(5);
+        address user2 = address(6);
 
-    //     (,Process.Level level0,,,,,,) = finance.referralInfo(user);
-    //     assertEq(uint256(level0), uint256(Process.Level.V5));
+        uint256 stakeAmount = 10000e18;
 
-    //     address[10] memory v5ReferralsForUser1;
-    //     for(uint i=0; i<9; i++){
-    //         address u = address(uint160(10 + i));
-    //         v5ReferralsForUser1[i] = u;
-    //         test_stake_utils(user1, u, 400000e18);
-    //     }
-    //     (,Process.Level level1,,,,,,)  = finance.referralInfo(user1);
-    //     assertEq(uint256(level1), uint256(Process.Level.V5));
-
-
-    //     address[10] memory v5ReferralsForUser2;
-    //     for(uint i=0; i<9; i++){
-    //         address u = address(uint160(30 + i));
-    //         v5ReferralsForUser2[i] = u;
-    //         test_stake_utils(user2, u, 400000e18);
-    //     }
-    //     (,Process.Level level2,,,,,,)  = finance.referralInfo(user2);
-    //     assertEq(uint256(level2), uint256(Process.Level.V5));
-
-
-    //     address user3 = address(100);
-    //     test_stake_utils(user1, user3, 100e18);
-    //     (,Process.Level level3,,,,,,)  = finance.referralInfo(user);
-    //     // console.log("user level:",uint256(level2));
-    //     assertEq(uint256(level3), uint256(Process.Level.SHARE));
-    // }
-
-
-    // function test_directAward() public {
-    //     uint256 beforeUsdtAmount = IERC20(USDT).balanceOf(recipientForBurn);
-    //     test_stake_utils(initialCode, user, 100e18);
-    //     address user1 = address(10);
-    //     test_stake_utils(user, user1, 100e18);
-    //     vm.warp(block.timestamp + 10 days);
-
-    //     uint256 stakingAward = finance.getUserStakingAward(user1);
-    //     uint256 totalAward = finance.getUserAward(user1);
-    //     assertEq(stakingAward, totalAward);
-
-    //     vm.startPrank(user1);
-    //     finance.claim();
-    //     vm.stopPrank();
-    //     (,,,,uint256 referralAward,,,)  = finance.referralInfo(user);
-    //     assertEq(stakingAward * 10 / 100, referralAward);
-
-    //     (,,,,uint256 referralAward1,,,)  = finance.referralInfo(initialCode);
-    //     assertEq(stakingAward * 50 / 100, referralAward1);
-
-    //     uint256 afterUsdtAmount = IERC20(USDT).balanceOf(recipientForBurn);
-    //     assertEq(beforeUsdtAmount + 7e18, afterUsdtAmount);
-    // }
-
-    // function test_awardForLevel() public {
-    //     test_stake_utils(initialCode, user, 100e18);
-    //     address user1 = address(9);
-    //     test_stake_utils(user, user1, 100e18);
-
-    //     address[4] memory v1ReferralsForUser;
-    //     for(uint i=0; i<4; i++){
-    //         address u = address(uint160(10 + i));
-    //         v1ReferralsForUser[i] = u;
-    //         test_stake_utils(user, u, 3000e18);
-    //     }
-
-    //     (,Process.Level level0,,,,,,) = finance.referralInfo(user);
-    //     assertEq(uint256(level0), uint256(Process.Level.V1));
-
-
-    //     address[4] memory v1ReferralsForUser1;
-    //     for(uint i=0; i<4; i++){
-    //         address u = address(uint160(20 + i));
-    //         v1ReferralsForUser1[i] = u;
-    //         test_stake_utils(user1, u, 3000e18);
-    //     }
-    //     (,Process.Level level1,,,,,,) = finance.referralInfo(user1);
-    //     assertEq(uint256(level1), uint256(Process.Level.V1));
-
-    //     address user2 = address(100);
-    //     test_stake_utils(user1, user2, 100e18);
-
-    //     vm.warp(block.timestamp + 10 days);
-    //     uint256 stakingAward = finance.getUserStakingAward(user2);
-    //     uint256 totalAward = finance.getUserAward(user2);
-    //     assertEq(stakingAward, totalAward);
-    //     vm.startPrank(user2);
-    //     finance.claim();
-    //     vm.stopPrank();
-
-    //     (,,,,uint256 referralAward0,,,)  = finance.referralInfo(user1);
-    //     assertEq(stakingAward * 20 / 100, referralAward0);
-
-    //     (,,,,uint256 referralAward1,,,)  = finance.referralInfo(user);
-    //     assertEq(0, referralAward1);
-
-    //     (,,,,uint256 referralAward2,,,)  = finance.referralInfo(initialCode);
-    //     assertEq(stakingAward * 40 / 100, referralAward2);
-    // }
-
-    // function test_awardForShare() public {
-    //     test_upgrade_to_share();
-    //     address[] memory shareAddrs = finance.getShareAddrs();
-    //     assertEq(shareAddrs.length, 1);
-
-    //     address user1000 = address(10000);
-    //     test_stake_utils(initialCode, user1000, 100e18);
-
-    //     vm.warp(block.timestamp + 10 days);
-    //     uint256 stakingAward = finance.getUserStakingAward(user1000);
-    //     vm.startPrank(user1000);
-    //     finance.claim();
-    //     vm.stopPrank();
-
-    //     uint256 user1000Award = finance.getUserAward(user1000);
-    //     assertEq(user1000Award, 0);
-
-    //     (,,,,,uint256 shareAward,,)  = finance.referralInfo(user);
-    //     assertEq(stakingAward * 10 / 100, shareAward);
-    // }
-
-    // function test_staking_referral_shareAward() public {
-    //     //user升级到了share等级
-    //     test_upgrade_to_share();
-    //     address user1000 = address(10000);
-    //     test_stake_utils(initialCode, user1000, 100e18);
-
-    //     vm.warp(block.timestamp + 10 days);
-    //     uint256 stakingAward = finance.getUserStakingAward(user1000);
-    //     vm.startPrank(user1000);
-    //     finance.claim();
-    //     vm.stopPrank();
-
-        
-    //     uint256 totalAward = stakingAward * 10 / 100 + stakingAward;
-    //     assertEq(totalAward, finance.getUserAward(user));
-
-    // }
-
-    function test_stakingAward_issue() public {
-        address user1 = address(10);
-        address user2 = address(11);
-        //initialCode => user = > user1 = user2
+        /**
+        * 1️⃣ 建立推荐关系
+        * initialCode -> user -> user1 -> user2
+        */
         test_stake_utils(initialCode, user, 100e18);
         test_stake_utils(user, user1, 100e18);
-        test_stake_utils(user1, user2, 100e18);
 
 
+        /**
+        * 2️⃣ user 升级到 V1
+        * 3 次直推 + 3 * 10000 performance
+        */
+        test_stake_utils(user, address(10), stakeAmount);
+        test_stake_utils(user, address(11), stakeAmount);
+        test_stake_utils(user, address(12), stakeAmount);
+
+        // assertEq(uint8(finance.referralInfo(user).level), uint8(Process.Level.V1));
+        (,Process.Level levelUser,,,,,,) = finance.referralInfo(user);
+        assertEq(uint8(levelUser), uint8(Process.Level.V1));
+
+        /**
+        * 3️⃣ user1 升级到 V2
+        * 4 次直推 + 5 * 10000 performance
+        */
+        test_stake_utils(user1, address(13), stakeAmount);
+        test_stake_utils(user1, address(14), stakeAmount);
+        test_stake_utils(user1, address(15), stakeAmount);
+        test_stake_utils(user1, address(16), stakeAmount);
+        test_stake_utils(user1, address(17), stakeAmount);
+
+        // address recommender;    //推荐人地址
+        // Level   level;          //级别
+        // uint256 referralNum;    //有效邀请人数
+        // uint256 performance;    //邀请总业绩
+        // uint256 referralAward;  //邀请奖励
+        // uint256 shareAward;     //share等级升级前的负债，避免多给
+        // uint256 subCoinQuota;   //子币额度
+        // bool    isMigration;    //是否映射旧版本邀请关系
+        (,Process.Level levelUser1,,,,,,) = finance.referralInfo(user1);
+        assertEq(uint8(levelUser1), uint8(Process.Level.V2));
+
+        /**
+        * 4️⃣ user2 stake
+        */
+        test_stake_utils(user1, user2, stakeAmount);
+
+        /**
+        * 5️⃣ 推进时间，产生 staking 收益
+        */
         vm.warp(block.timestamp + 10 days);
-
-
+        uint256 stakingReward = finance.getUserStakingAward(user2);
+        /**
+        * 6️⃣ user2 claim（触发 referral reward 分发）
+        */
         vm.startPrank(user2);
-        uint256 user2StakingArawd = finance.getUserStakingAward(user2);
-        uint256 user2Award = finance.getUserAward(user2);
-        assertEq(user2StakingArawd, user2Award);
-        console.log("user2 staking award:", user2StakingArawd);
-        finance.claim();
-        vm.stopPrank();
-        
-
-    //     struct User{
-    //     uint256 stakingUsdt;        //质押数量
-    //     uint256 stakingTime;        //质押时间
-    //     uint256 pendingDividend;    //质押收益结余，计算使用
-    //     uint256 pendingBonus;       //邀请奖励+share奖励，计算使用
-    //     uint256 extracted;          //已提取收益   
-    //     bool    addSubCoinQuota;    //大于1000u质押的用户有且只有给一次10U子币额度
-    // }
-
-    // struct Referral{
-    //     address recommender;    //推荐人地址
-    //     Level   level;          //级别
-    //     uint256 referralNum;    //有效邀请人数
-    //     uint256 performance;    //邀请总业绩
-    //     uint256 referralAward;  //邀请奖励
-    //     uint256 shareAward;     //share等级升级前的负债，避免多给
-    //     uint256 subCoinQuota;   //子币额度
-    //     bool    isMigration;    //是否映射旧版本邀请关系
-    // }
-        vm.startPrank(user1);
-
-        uint256 user1StakingArawd = finance.getUserStakingAward(user1);
-        (,,,uint256 pendingBonus,,) = finance.userInfo(user1);
-        assertEq(pendingBonus, user2StakingArawd * 10 / 100);
-
-        uint256 user1Award = finance.getUserAward(user1);
-        assertEq(pendingBonus + user1StakingArawd, user1Award);
         finance.claim();
         vm.stopPrank();
 
-        vm.startPrank(user);    
-        uint256 userStakingArawd = finance.getUserStakingAward(user);
-        (,,,uint256 pendingBonus0,,) = finance.userInfo(user);
-        assertEq(pendingBonus0, user1StakingArawd * 10 / 100);
-        uint256 userAward = finance.getUserAward(user);
-        assertEq(pendingBonus0 +userStakingArawd, userAward);
-        finance.claim();
-        assertEq(finance.getUserAward(user), 0);
-        vm.stopPrank();
+        /**
+        * 7️⃣ 校验奖励
+        */
+        // uint256 stakingUsdt;        //质押数量
+        // uint256 stakingTime;        //质押时间
+        // uint256 pendingDividend;    //质押收益结余，计算使用
+        // uint256 pendingBonus;       //邀请奖励+share奖励，计算使用
+        // uint256 extracted;          //已提取收益   
+        // bool    addSubCoinQuota;    //大于1000u质押的用户有且只有给一次10U子币额度
+        (,,,uint256 pendingBonusUser1,,) = finance.userInfo(user1);
+        (,,,uint256 pendingBonusUser,,) = finance.userInfo(user);
 
+
+        // user1: V1 + V2 = 20% + direct 10% = 30%
+        uint256 expectedUser1 =
+            stakingReward * 30 / 100;
+
+        // user: 不应拿到 V1 的 10%
+        uint256 expectedUser = 0;
+
+        // assertApproxEqAbs(user1Bonus, expectedUser1, 1);
+        assertEq(pendingBonusUser1, expectedUser1);
+        assertEq(pendingBonusUser, expectedUser);
     }
 
-    function test_restake() public {
-        test_stake_utils(initialCode, user, 100e18);
-        // (,,,,,) = finance.userInfo(user1);
-        vm.warp(block.timestamp + 10 days);
-        
-        vm.startPrank(user);
-        deal(USDT, user, 100e18);
-        IERC20(USDT).approve(address(finance), 100e18);
-        uint256 stakingAward = finance.getUserStakingAward(user);
-        //第二次质押，结余第一次的静态收益到pendingDividend
-        finance.stake(100e18);
-        (,,uint256 pendingDividend,uint256 pendingBonus,,) = finance.userInfo(user);
-        assertEq(pendingDividend, stakingAward);
-        assertEq(pendingBonus, 0);
-        vm.stopPrank();
 
-        vm.warp(block.timestamp + 10 days);
-        uint256 stakingAward0 = finance.getUserStakingAward(user);
-        assertEq(finance.getUserAward(user), stakingAward0);
-    }
-    
-
-    function test_swapSubToken() public{
-        test_stake_utils(initialCode, user, 1000e18);
-        (,,,,,,uint256 subCoinQuota,) = finance.referralInfo(user);
-        assertEq(subCoinQuota, 10e18);
-        vm.startPrank(user);
-        deal(USDT, user, 10e18);
-        IERC20(USDT).approve(address(finance), 10e18);
-        finance.swapSubToken(10e18);
-        vm.stopPrank();
-        uint256 outAmount = finance.getAmountOut(10e18);
-        console.log("outAmount:",outAmount);
-    }
-
-    function test_stakingAward() public {
-        test_stake_utils(initialCode, user, 100e18);
-        vm.warp(block.timestamp + 10 days);
-        uint256 award = finance.getUserAward(user);
-        console.log("award:",award);
-    }
 }

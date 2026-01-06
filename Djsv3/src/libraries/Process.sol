@@ -67,25 +67,37 @@ library Process {
         }
     }
 
-    function calcLevelReward(
+    function levelToIndex(Level lv) internal pure returns (bool valid, uint8 index) {
+        if (lv == Level.V1) return (true, 0);
+        if (lv == Level.V2) return (true, 1);
+        if (lv == Level.V3) return (true, 2);
+        if (lv == Level.V4) return (true, 3);
+        if (lv == Level.V5) return (true, 4);
+        return (false, 0);
+    }
+
+    function calcLevelBatchReward(
         Level lv,
         bool[5] memory levelPaid,
         uint256 amount
-    ) internal pure returns (uint256 reward, bool paid, uint8 levelIndex) {
-        reward = 0;
-        paid = false;
-        levelIndex = 0;
+    )
+        internal
+        pure
+        returns (
+            uint256 reward,
+            bool[5] memory newLevelPaid
+        )
+    {
+        newLevelPaid = levelPaid;
 
-        if (lv == Level.V1) levelIndex = 0;
-        else if (lv == Level.V2) levelIndex = 1;
-        else if (lv == Level.V3) levelIndex = 2;
-        else if (lv == Level.V4) levelIndex = 3;
-        else if (lv == Level.V5) levelIndex = 4;
-        else return (0, false, 0);
+        (bool valid, uint8 maxIndex) = levelToIndex(lv);
+        if (!valid) return (0, newLevelPaid);
 
-        if (!levelPaid[levelIndex]) {
-            reward = amount * 10 / 100;
-            paid = true;
+        for (uint8 i = 0; i <= maxIndex; i++) {
+            if (newLevelPaid[i]) continue;
+
+            reward += amount * 10 / 100;
+            newLevelPaid[i] = true;
         }
     }
 

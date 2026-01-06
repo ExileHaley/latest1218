@@ -21,23 +21,23 @@ $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --b
 
 ### contract address
 -----------------------------------------------------------------------------
-#### 测试USDT:0x1d5F2ae6050e20eBaD417019957bE287c25928C2
+#### 测试USDT:0x57EC3b57E7Cd104FF678343C6C1E103c9D666e8D
 -----------------------------------------------------------------------------
-#### DJS:0x6538D19866D11cA5Fc112684a061b1653B3819E7
+#### DJS:0xfE20159b44DCDB5f6e0Affc49F8D57Bc82C3e2Aa
 -----------------------------------------------------------------------------
-#### Djs`s pancakePair:0x2feAe0cbF84B5b15D65178e57F55BF0B9e506124
+#### Djs`s pancakePair:0xEF29C5DeB527e969E6AEC489548778ae3518f03a
 -----------------------------------------------------------------------------
-#### DJSC:0xf89893FcF1824857fdB7D9F4a07D5D8d172aaa68
+#### DJSC:0xE58F05283dBa8247D159804Bc987E28199921909
 -----------------------------------------------------------------------------
-#### Djsc`s pancakePair:0x4d8580236a480C7DC2E5C8B98CEb80aC969771A6
+#### Djsc`s pancakePair:0x17Fa3E8B0566E8470A8C9208E8a4FD8ceCc63c86
 -----------------------------------------------------------------------------
-#### finance(finance.json):0x94A3f4e845498634A744DC5AD0b79E86F1cf500F
+#### finance(finance.json):0x11611194d01065ED16193c1453e8B70F7D2C191E
 -----------------------------------------------------------------------------
-#### financeView(financeView.json):0x03c39ba3B6Fdf75cc822bcf3d2182dcFa192310D
+#### financeView(financeView.json):0xc268AAcc405F69cf5a9AfBC1645b28456Da16efE
 -----------------------------------------------------------------------------
-#### liquidityManager:0x9c2149317dFc9986a09B65AC7aC4D4Ea01C895F4
+#### liquidityManager:0xA7Bd6467818CdA02feB3b14b534400047e424529
 -----------------------------------------------------------------------------
-#### nodeDividends(nodeDividends.json):0xeab7562203961fc7D1449CD0a37d40391C3dfe0D
+#### nodeDividends(nodeDividends.json):0xcDe6D604469786E54Cc44bd9Bc7d6B615e7A8543
 -----------------------------------------------------------------------------
 
 

@@ -395,33 +395,46 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
     {
         bool[5] memory levelPaid;
         address current = referralInfo[user].recommender;
+        uint256 maxReward = amount * 50 / 100;
 
         while (current != address(0)) {
             Process.Referral storage r = referralInfo[current];
-            Process.User storage u = userInfo[current];
 
-            (uint256 reward, bool paid, uint8 idx) =
-                Process.calcLevelReward(r.level, levelPaid, amount);
+            // SHARE 直接终止
+            if (r.level == Process.Level.SHARE) break;
 
-            if (paid) {
-                levelPaid[idx] = true;
-                u.pendingBonus += reward;
-                r.referralAward += reward;
-                totalUsed += reward;
+            (uint256 reward, bool[5] memory newPaid) =
+                Process.calcLevelBatchReward(r.level, levelPaid, amount);
 
-                awardRecords[current].push(Process.Record({
-                    category:Process.Category.NORMAL_LEVEL,
-                    from: user,
-                    amount: reward,
-                    time: block.timestamp
-                })); 
+            if (reward > 0) {
+                if (totalUsed + reward > maxReward) {
+                    reward = maxReward - totalUsed;
+                }
 
-                if (totalUsed == amount * 50 / 100) break; // V1~V5 最多 50%
+                if (reward > 0) {
+                    Process.User storage u = userInfo[current];
+                    u.pendingBonus += reward;
+                    r.referralAward += reward;
+                    totalUsed += reward;
+
+                    // 写回 paid 状态
+                    levelPaid = newPaid;
+
+                    awardRecords[current].push(Process.Record({
+                        category: Process.Category.NORMAL_LEVEL,
+                        from: user,
+                        amount: reward,
+                        time: block.timestamp
+                    }));
+                }
             }
+
+            if (totalUsed >= maxReward) break;
 
             current = r.recommender;
         }
     }
+
 
     function _processDirectAward(address user, uint256 amount) internal{
         address direct = referralInfo[user].recommender;
@@ -509,49 +522,6 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
     }
 
 
-    // // 返回用户基础信息 + 当前可提取收益 + Share等级收益
-    // function getUserInfoBasic(address user) public view returns(
-    //     uint256 stakingUsdt,
-    //     uint256 extracted,
-    //     uint256 remaining,
-    //     uint256 stakingAward,
-    //     uint256 extractable,
-    //     uint256 referralAward,
-    //     uint256 shareAward
-    // ){
-    //     Process.User memory u = userInfo[user];
-    //     Process.Referral memory r = referralInfo[user];
-    //     stakingUsdt = u.stakingUsdt;
-    //     extracted = u.extracted;
-    //     stakingAward = getUserStakingAward(user);
-    //     //剩余待释放
-    //     uint256 futureTotalAward = u.stakingUsdt * MULTIPLE;
-    //     if(futureTotalAward >= u.extracted) remaining = futureTotalAward - u.extracted;
-    //     else remaining = 0;
-    //     // 当前可提取总收益
-    //     extractable = getUserAward(user);
-    //     // 当前Share等级收益
-    //     referralAward = r.referralAward;
-    //     shareAward = r.shareAward;
-    // }
-
-    // // 返回用户邀请/推荐相关信息
-    // function getUserInfoReferral(address user) external view returns (
-    //     Process.Level level,
-    //     address recommender,
-    //     uint256 referralNum,
-    //     uint256 performance,
-    //     uint256 subCoinQuota,
-    //     bool    isMigration
-    // ) {
-    //     Process.Referral memory r = referralInfo[user];
-    //     level = r.level;
-    //     recommender = r.recommender;
-    //     referralNum = r.referralNum;
-    //     performance = r.performance;
-    //     subCoinQuota = r.subCoinQuota;
-    //     isMigration = r.isMigration;
-    // }
 
 }
 

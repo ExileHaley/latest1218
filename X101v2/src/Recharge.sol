@@ -238,9 +238,12 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
             amount,
             0,
             0,
-            to,
+            address(this),
             block.timestamp + 30
         );
+
+        TransferHelper.safeTransfer(token0, to, amountA);
+        TransferHelper.safeTransfer(token1, to, amountB);
     }
 
 

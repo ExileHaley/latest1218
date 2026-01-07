@@ -46,8 +46,15 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         recipient = _recipient;
         price[Category.ENVOY] = 500e18;
         price[Category.DIRECTOR] = 1000e18;
-        price[Category.SHARE] = 300e18;
+        price[Category.SHARE] = 3000e18;
     }
+
+    function setPrice(uint256 _envoy, uint256 _director, uint256 _share) external onlyOwner{
+        price[Category.ENVOY] = _envoy;
+        price[Category.DIRECTOR] = _director;
+        price[Category.SHARE] = _share;
+    }
+
 
     function referral(address _recommender) external nonReentrant {
         require(initialCode != msg.sender);

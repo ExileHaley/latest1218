@@ -40,33 +40,41 @@ library Process {
 
     // 计算某用户升级后的等级和新增 sharePerformance
     function calcUpgradeLevel(
-        Referral memory r,
+        Process.Referral memory r,
         uint256 directReferralsCount,
         uint256 directV5Count
     ) internal pure returns (Level newLevel, bool upgrade) {
+
+        // 默认保持原等级
         newLevel = r.level;
         upgrade = false;
 
-        if(r.level == Level.V0 && directReferralsCount >= 3 && r.performance >= 10000e18){
-            newLevel = Level.V1;
-            upgrade = true;
-        } else if(r.level == Level.V1 && directReferralsCount >= 4 && r.performance >= 50000e18){
-            newLevel = Level.V2;
-            upgrade = true;
-        } else if(r.level == Level.V2 && directReferralsCount >= 5 && r.performance >= 200000e18){
-            newLevel = Level.V3;
-            upgrade = true;
-        } else if(r.level == Level.V3 && directReferralsCount >= 7 && r.performance >= 800000e18){
-            newLevel = Level.V4;
-            upgrade = true;
-        } else if(r.level == Level.V4 && directReferralsCount >= 9 && r.performance >= 3000000e18){
-            newLevel = Level.V5;
-            upgrade = true;
-        } else if(r.level == Level.V5 && directV5Count >= 2){
+        // 直接算最终应得等级（从高到低）
+        if (directV5Count >= 2) {
             newLevel = Level.SHARE;
+        }
+        else if (directReferralsCount >= 9 && r.performance >= 3000000e18) {
+            newLevel = Level.V5;
+        }
+        else if (directReferralsCount >= 7 && r.performance >= 800000e18) {
+            newLevel = Level.V4;
+        }
+        else if (directReferralsCount >= 5 && r.performance >= 200000e18) {
+            newLevel = Level.V3;
+        }
+        else if (directReferralsCount >= 4 && r.performance >= 50000e18) {
+            newLevel = Level.V2;
+        }
+        else if (directReferralsCount >= 3 && r.performance >= 10000e18) {
+            newLevel = Level.V1;
+        }
+
+        // 只要等级变高，就升级
+        if (newLevel > r.level) {
             upgrade = true;
         }
     }
+
 
     function levelToIndex(Level lv) internal pure returns (bool valid, uint8 index) {
         if (lv == Level.V1) return (true, 0);

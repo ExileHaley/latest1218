@@ -80,60 +80,60 @@ contract DjsTest is Test{
     }
 
 
-    // function test_buy() public {
-    //     deal(USDT, user, 100e18);
-    //     test_exchange_utils(user, USDT, address(djs), 100e18);
-    //     uint256 cost = djs.totalCostUsdt(user);
-    //     console.log("buy cost:", cost);
+    function test_buy() public {
+        deal(USDT, user, 100e18);
+        test_exchange_utils(user, USDT, address(djs), 100e18);
+        uint256 cost = djs.totalCostUsdt(user);
+        console.log("buy cost:", cost);
 
-    //     uint256 toNode = djs.balanceOf(address(djs));
-    //     console.log("to node:",toNode);
-    // }
+        uint256 toNode = djs.balanceOf(address(djs));
+        console.log("to node:",toNode);
+    }
 
-    // function test_sell_no_profit() public{
-    //     vm.startPrank(initialRecipient);
-    //     djs.transfer(user, 100e18);
-    //     vm.stopPrank();
-    //     test_exchange_utils(user, address(djs), USDT, 100e18);
-    //     assertEq(djs.balanceOf(address(djs)), 0);
-    // }
+    function test_sell_no_profit() public{
+        vm.startPrank(initialRecipient);
+        djs.transfer(user, 100e18);
+        vm.stopPrank();
+        test_exchange_utils(user, address(djs), USDT, 100e18);
+        assertEq(djs.balanceOf(address(djs)), 0);
+    }
     
-    // function test_sell_normal_profit() public {
-    //     // user buy
-    //     deal(USDT, user, 100e18);
-    //     test_exchange_utils(user, USDT, address(djs), 100e18);
+    function test_sell_normal_profit() public {
+        // user buy
+        deal(USDT, user, 100e18);
+        test_exchange_utils(user, USDT, address(djs), 100e18);
 
-    //     //user1 buy
-    //     address user1 = address(10);
-    //     deal(USDT, user1, 1000e18);
-    //     test_exchange_utils(user1, USDT, address(djs), 1000e18);
+        //user1 buy
+        address user1 = address(10);
+        deal(USDT, user1, 1000e18);
+        test_exchange_utils(user1, USDT, address(djs), 1000e18);
 
-    //     //user sell清空
-    //     uint256 amountToSell = djs.balanceOf(user);
-    //     test_exchange_utils(user, address(djs), USDT, amountToSell);
+        //user sell清空
+        uint256 amountToSell = djs.balanceOf(user);
+        test_exchange_utils(user, address(djs), USDT, amountToSell);
 
-    //     //user buy
-    //     deal(USDT, user, 100e18);
-    //     test_exchange_utils(user, USDT, address(djs), 100e18);
+        //user buy
+        deal(USDT, user, 100e18);
+        test_exchange_utils(user, USDT, address(djs), 100e18);
 
-    //     uint256 toNode0 = djs.balanceOf(address(djs));
-    //     uint256 amountToSell0 = djs.balanceOf(user);
-    //     test_exchange_utils(user, address(djs), USDT, amountToSell0);
-    //     uint256 toNode1 = djs.balanceOf(address(djs));
-    //     assertEq(toNode0, toNode1);
-    // }
+        uint256 toNode0 = djs.balanceOf(address(djs));
+        uint256 amountToSell0 = djs.balanceOf(user);
+        test_exchange_utils(user, address(djs), USDT, amountToSell0);
+        uint256 toNode1 = djs.balanceOf(address(djs));
+        assertEq(toNode0, toNode1);
+    }
 
-    // function test_sell_sellFee() public {
-    //     uint256 usdtBalanceOfSellFee0 = IERC20(USDT).balanceOf(djs.sellAndProfit());
-    //     vm.startPrank(initialRecipient);
-    //     djs.transfer(user, 100e18);
-    //     vm.stopPrank();
+    function test_sell_sellFee() public {
+        uint256 usdtBalanceOfSellFee0 = IERC20(USDT).balanceOf(djs.sellAndProfit());
+        vm.startPrank(initialRecipient);
+        djs.transfer(user, 100e18);
+        vm.stopPrank();
 
-    //     test_exchange_utils(user, address(djs), USDT, 100e18);
+        test_exchange_utils(user, address(djs), USDT, 100e18);
 
-    //     uint256 usdtBalanceOfSellFee1 = IERC20(USDT).balanceOf(djs.sellAndProfit());
-    //     console.log("test_sell_sellFee result:", usdtBalanceOfSellFee1 - usdtBalanceOfSellFee0);
-    // }
+        uint256 usdtBalanceOfSellFee1 = IERC20(USDT).balanceOf(djs.sellAndProfit());
+        console.log("test_sell_sellFee result:", usdtBalanceOfSellFee1 - usdtBalanceOfSellFee0);
+    }
 
     function test_profitFee_to_node() public {
         vm.startPrank(initialRecipient);

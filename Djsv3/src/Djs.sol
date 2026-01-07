@@ -267,5 +267,17 @@ contract Djs is ERC20, Ownable{
         INodeDividends(nodeDividends).updateFarm(afterUsdtAmount - beforeUsdtAmount);
     } 
 
+    function processNodeFee() external{
+        if(nodeDividends != address(0)){
+            uint256 balanceToken = balanceOf(address(this));
+            if(balanceToken > 0) {
+                uint256 beforeUsdtAmount = IERC20(USDT).balanceOf(nodeDividends);
+                _swap(balanceToken, nodeDividends);
+                uint256 afterUsdtAmount = IERC20(USDT).balanceOf(nodeDividends);
+                INodeDividends(nodeDividends).updateFarm(afterUsdtAmount - beforeUsdtAmount);
+            }
+        }
+    }
+
 
 }

@@ -102,7 +102,7 @@ contract FinanceTest is Test{
         djs = new Djs(initialRecipient, marketingForDjs, wallet, USDT);
         djs.setTradingOpen(true);
         address[4] memory addrs = [technology, foundation, marketingForDjsc, pot];
-        djsc = new Djsc(addrs, sellFee, buyFee, profitFee, USDT);
+        djsc = new Djsc(addrs, sellFee, buyFee, USDT);
         
         //deploy nodeDividends
         NodeDividends nodeImpl = new NodeDividends();

@@ -82,7 +82,7 @@ contract DeployScript is Script {
         djs = new Djs(initialRecipient, marketingForDjs, wallet, address(tether));
         djs.setTradingOpen(true);
         address[4] memory addrs = [technology, foundation, marketingForDjsc, pot];
-        djsc = new Djsc(addrs, sellFee, buyFee, profitFee, address(tether));
+        djsc = new Djsc(addrs, sellFee, buyFee, address(tether));
 
         //deploy nodeDividends
         NodeDividends nodeImpl = new NodeDividends();

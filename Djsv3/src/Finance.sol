@@ -316,11 +316,12 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
 
     function processUpgrade(address user, uint256 amount) internal{
         address current = referralInfo[user].recommender;
-
+        uint256 num = 0;
+        if(!isAddDirectReferrals[user]) num = 1;
         while(current != address(0)){
             Process.Referral storage r = referralInfo[current];
             //人数放在邀请里吧
-            r.referralNum += 1;
+            r.referralNum += num;
             r.performance += amount;
 
             uint256 directV5 = 0;

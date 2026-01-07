@@ -34,7 +34,8 @@ library Process {
 
     struct Info{
         address user;
-        uint256 amount;
+        uint256 staking;
+        uint256 performance;
     }
 
     // 计算某用户升级后的等级和新增 sharePerformance

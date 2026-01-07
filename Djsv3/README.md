@@ -17,7 +17,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 
-### 本次更新前端只更新合约地址，其余不用做任何修改
+### 更新ABI，getDirectReferralInfo方法返回结构体字段有变化
 
 ### contract address
 -----------------------------------------------------------------------------
@@ -75,7 +75,8 @@ function getReferralAwardRecords(address user) external view returns(Record[] me
 
 struct Info{
         address user; //直推地址
-        uint256 amount; //直推地址对应的伞下业绩+自身质押
+        uint256 staking; //用户质押数量
+        uint256 performance; //用户伞下业绩
 }
 function getDirectReferralInfo(address user) external view returns(Process.Info[] memory);
 

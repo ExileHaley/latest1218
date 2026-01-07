@@ -502,7 +502,8 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
             address u = refs[i];
             infos[i] = Process.Info({
                 user: u,
-                amount: userInfo[u].stakingUsdt + referralInfo[u].performance
+                staking: userInfo[u].stakingUsdt,
+                performance: referralInfo[u].performance
             });
         }
 

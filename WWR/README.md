@@ -17,7 +17,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 
-#### finance:
+#### finance:0x557B04D6D2D1Fa9f1abD5785b83C44E24667b992
 
 #### finance func list
 ```solidity

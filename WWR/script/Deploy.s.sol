@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Script} from "forge-std/Script.sol";
+import {Script,console} from "forge-std/Script.sol";
 import {Finance} from "../src/Finance.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
@@ -11,8 +11,8 @@ contract DeployScript is Script {
     address public recipient;
 
     function setUp() public {
-        // initialCode = 
-        // recipient = 
+        initialCode = address(0x92A5A7A4F6B2e0b9107b66B459d5f0eB219dc7B2);
+        recipient = address(0x92A5A7A4F6B2e0b9107b66B459d5f0eB219dc7B2);
     }
 
     function run() public {
@@ -26,5 +26,6 @@ contract DeployScript is Script {
         finacne = Finance(payable(address(finacneProxy)));
 
         vm.stopBroadcast();
+        console.log("Finance deployed at:", address(finacne));
     }
 }

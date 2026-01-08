@@ -23,7 +23,7 @@ $ forge verify-contract --chain-id 56 --compiler-version v0.8.30+commit.a1b79de6
 
 $ cast abi-encode "constructor(address,address,address)" 0xD4360fAE9a810Be17b5fC1edF12849675996f712 0x73832D01364c48e4b6C49B9ECBF07aB92852B67c 0x940FA6e4dCBBA8Fb25470663849B815a732a021C 
 ```
-### 更新recharge abi，其中新增了rechargeAdx方法
+### 更新nadi链的recharge abi，其中新增了rechargeAdx方法
 
 
 #### usdt:0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5

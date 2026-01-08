@@ -196,13 +196,14 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         }
         //更新总质押totalStakedUsdt
         totalStakedUsdt += amountUSDT;
-
+        uint256 num = 0;
         if(!isAddDirectReferrals[msg.sender]){
+            num = 1;
             directReferrals[r.recommender].push(msg.sender);
             isAddDirectReferrals[msg.sender] = true;
         }
 
-        processUpgrade(msg.sender, amountUSDT);
+        processUpgrade(msg.sender, amountUSDT, num);
         emit Staked(msg.sender, amountUSDT);
     }
 
@@ -314,14 +315,14 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         u.stakingTime = block.timestamp;
     }
 
-    function processUpgrade(address user, uint256 amount) internal{
+    function processUpgrade(address user, uint256 amount, uint256 num) internal{
         address current = referralInfo[user].recommender;
-        uint256 num = 0;
-        if(!isAddDirectReferrals[user]) num = 1;
+        // uint256 num = 0;
+        // if(!isAddDirectReferrals[user]) num = 1;
         while(current != address(0)){
             Process.Referral storage r = referralInfo[current];
             //人数放在邀请里吧
-            r.referralNum += num;
+            if(num > 0) r.referralNum += num;
             r.performance += amount;
 
             uint256 directV5 = 0;

@@ -14,9 +14,8 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 
 ### deploy nadi token
 ```shell
-$ forge script script/Upgrade.s.sol -vvv --rpc-url=https://rpc.naaidepin.co --broadcast --private-key=[privateKey]
+$ forge script script/DeployRecharge.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
-
 
 ### verify contract
 ```shell

@@ -16,11 +16,11 @@ import {IUniswapV2Pair} from "./interfaces/IUniswapV2Pair.sol";
 
 contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard{
     //nadi
-    address  constant WBNB = 0xe901E30661dD4Fd238C4Bfe44b000058561a7b0E;
-    address  constant USDT = 0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5;
+    // address  constant WBNB = 0xe901E30661dD4Fd238C4Bfe44b000058561a7b0E;
+    // address  constant USDT = 0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5;
     // //bsc
-    // address  constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
-    // address  constant USDT = 0x55d398326f99059fF775485246999027B3197955;
+    address  constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
+    address  constant USDT = 0x55d398326f99059fF775485246999027B3197955;
 
     enum Mark{INVAILD, ADD, REMOVE}
 

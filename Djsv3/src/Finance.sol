@@ -161,9 +161,13 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
     }
 
     function swapSubToken(uint256 amountUSDT) external {
+        uint256 fee = amountUSDT * 3 / 100;
+        TransferHelper.safeTransferFrom(USDT, msg.sender, recipientForBurn, fee);
+
         if(amountUSDT > referralInfo[msg.sender].subCoinQuota) revert Errors.InsufficientQuota();
-        TransferHelper.safeTransferFrom(USDT, msg.sender, liquidityManager, amountUSDT);
-        ILiquidityManager(liquidityManager).swapForSubTokenToUser(msg.sender, amountUSDT);
+        TransferHelper.safeTransferFrom(USDT, msg.sender, liquidityManager, amountUSDT - fee);
+
+        ILiquidityManager(liquidityManager).swapForSubTokenToUser(msg.sender, amountUSDT -fee);
         referralInfo[msg.sender].subCoinQuota -= amountUSDT;
     }
 

@@ -14,7 +14,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 
 ### deploy nadi token
 ```shell
-$ forge script script/DeployRecharge.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
+$ forge script script/Upgrade.s.sol -vvv --rpc-url=https://rpc.naaidepin.co --broadcast --private-key=[privateKey]
 ```
 
 ### verify contract
@@ -23,7 +23,7 @@ $ forge verify-contract --chain-id 56 --compiler-version v0.8.30+commit.a1b79de6
 
 $ cast abi-encode "constructor(address,address,address)" 0xD4360fAE9a810Be17b5fC1edF12849675996f712 0x73832D01364c48e4b6C49B9ECBF07aB92852B67c 0x940FA6e4dCBBA8Fb25470663849B815a732a021C 
 ```
-
+### 更新recharge abi，其中新增了rechargeAdx方法
 
 
 #### usdt:0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5
@@ -70,4 +70,7 @@ function getAmountAdxOut(uint256 amount) external view returns(uint256);
 function sellForX101(string memory remark, uint256 amount) external;
 //amount是x101要卖出的数量，返回结果是需要消耗的gas的数量
 function getAmountOut(uint256 amount) public view returns(uint256);
+
+//专门用于充值ADX并进行分配的
+function rechargeAdx(string memory remark,uint256 amount) external
 ```

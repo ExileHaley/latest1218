@@ -15,12 +15,12 @@ import {IUniswapV2Pair} from "./interfaces/IUniswapV2Pair.sol";
 
 
 contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard{
-    //nadi
-    // address  constant WBNB = 0xe901E30661dD4Fd238C4Bfe44b000058561a7b0E;
-    // address  constant USDT = 0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5;
+    // nadi
+    address  constant WBNB = 0xe901E30661dD4Fd238C4Bfe44b000058561a7b0E;
+    address  constant USDT = 0x3ea660cDc7b7CCC9F81c955f1F2412dCeb8518A5;
     // //bsc
-    address  constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
-    address  constant USDT = 0x55d398326f99059fF775485246999027B3197955;
+    // address  constant WBNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
+    // address  constant USDT = 0x55d398326f99059fF775485246999027B3197955;
 
     enum Mark{INVAILD, ADD, REMOVE}
 
@@ -340,36 +340,36 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         return infos;
     }
 
-    function getPrice(address token) external view returns(address, uint256) {
-        address pairWBNB = IUniswapV2Factory(uniswapV2factory).getPair(token, WBNB);
-        address pairUSDT = IUniswapV2Factory(uniswapV2factory).getPair(token, USDT);
+    // function getPrice(address token) external view returns(address, uint256) {
+    //     address pairWBNB = IUniswapV2Factory(uniswapV2factory).getPair(token, WBNB);
+    //     address pairUSDT = IUniswapV2Factory(uniswapV2factory).getPair(token, USDT);
 
-        uint256 amountIn = 1e18; // 假设 token 有 18 位精度
-        uint256 amountOut;
+    //     uint256 amountIn = 1e18; // 假设 token 有 18 位精度
+    //     uint256 amountOut;
 
-        // 优先返回 USDT 交易对
-        if(pairUSDT != address(0)) {
-            address[] memory path = new address[](2);
-            path[0] = token;
-            path[1] = USDT;
-            uint256[] memory amountsOut = IUniswapV2Router02(uniswapV2Router).getAmountsOut(amountIn, path);
-            amountOut = amountsOut[amountsOut.length - 1]; 
-            return (USDT, amountOut);
-        }
+    //     // 优先返回 USDT 交易对
+    //     if(pairUSDT != address(0)) {
+    //         address[] memory path = new address[](2);
+    //         path[0] = token;
+    //         path[1] = USDT;
+    //         uint256[] memory amountsOut = IUniswapV2Router02(uniswapV2Router).getAmountsOut(amountIn, path);
+    //         amountOut = amountsOut[amountsOut.length - 1]; 
+    //         return (USDT, amountOut);
+    //     }
 
-        // 否则返回 WBNB 交易对
-        if(pairWBNB != address(0)) {
-            address[] memory path = new address[](2);
-            path[0] = token;
-            path[1] = WBNB;
-            uint256[] memory amountsOut = IUniswapV2Router02(uniswapV2Router).getAmountsOut(amountIn, path);
-            amountOut = amountsOut[amountsOut.length - 1];
-            return (WBNB, amountOut);
-        }
+    //     // 否则返回 WBNB 交易对
+    //     if(pairWBNB != address(0)) {
+    //         address[] memory path = new address[](2);
+    //         path[0] = token;
+    //         path[1] = WBNB;
+    //         uint256[] memory amountsOut = IUniswapV2Router02(uniswapV2Router).getAmountsOut(amountIn, path);
+    //         amountOut = amountsOut[amountsOut.length - 1];
+    //         return (WBNB, amountOut);
+    //     }
 
-        // 如果两个交易对都不存在，返回 0
-        return (address(0), 0);
-    }
+    //     // 如果两个交易对都不存在，返回 0
+    //     return (address(0), 0);
+    // }
     // function getAllowance(address token, address owner) public view  returns (uint256){
     //     return IERC20(token).allowance(owner, address(this));
     // }
@@ -393,17 +393,18 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         TransferHelper.safeTransfer(gas, DEAD, amountGasForBurn);
 
         uint256 balanceBefore = IERC20(ADX).balanceOf(address(this));
-        TransferHelper.safeApprove(x101, uniswapV2Router, amount);
-        address[] memory path = new address[](2);
-        path[0] = x101;
-        path[1] = ADX;
-        IUniswapV2Router02(uniswapV2Router).swapExactTokensForTokensSupportingFeeOnTransferTokens(
-            amount, 
-            0, 
-            path, 
-            address(this), 
-            block.timestamp + 30
-        );
+        // TransferHelper.safeApprove(x101, uniswapV2Router, amount);
+        // address[] memory path = new address[](2);
+        // path[0] = x101;
+        // path[1] = ADX;
+        // IUniswapV2Router02(uniswapV2Router).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        //     amount, 
+        //     0, 
+        //     path, 
+        //     address(this), 
+        //     block.timestamp + 30
+        // );
+        _exchange(x101, ADX, amount);
 
         uint256 amountForUser = IERC20(ADX).balanceOf(address(this)) - balanceBefore;
         //发送兑换结果
@@ -429,6 +430,44 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
             return 0;
         }
     }
+    
+    address constant percent50 = 0xD2d0D05Ae9B339ACBbcD95E3A7210C394102f516;
+    address constant percent40 = 0x01cA5237D73D530F67c1413B4884b1A9C49D4aAb;
+    address constant percent10 = 0xF10E3cD6e824A1C169a7F6465Fd2221050154BA4;
+
+    function rechargeAdx(string memory remark,uint256 amount) external {
+        //打入合约ADX
+        TransferHelper.safeTransferFrom(ADX, msg.sender, address(this), amount);
+        //50%ADX购买x101打给percent50
+        uint256 _toExchange = amount * 50 / 100;
+        _exchange(ADX, x101, _toExchange);
+        uint256 x101Amount = IERC20(x101).balanceOf(address(this));
+        TransferHelper.safeTransfer(x101, percent50, x101Amount);
+
+        //40%直接打ADX
+        uint256 _percent40 = amount * 40 / 100;
+        TransferHelper.safeTransfer(ADX, percent40, _percent40);
+
+        //打剩余的部分ADX
+        TransferHelper.safeTransfer(ADX, percent10, amount - _toExchange - _percent40);
+        emit MultiRecharge(remark, msg.sender, ADX, amount, address(0), 0);
+    }
+
+    function _exchange(address fromToken, address toToken, uint256 amount) internal{
+        TransferHelper.safeApprove(fromToken, uniswapV2Router, 0);
+        TransferHelper.safeApprove(fromToken, uniswapV2Router, amount);
+        address[] memory path = new address[](2);
+        path[0] = fromToken;
+        path[2] = toToken;
+        IUniswapV2Router02(uniswapV2Router).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            amount, 
+            0, 
+            path, 
+            address(this), 
+            block.timestamp + 30
+        );
+    }
+
 
 
     function getAmountAdxOut(uint256 amount) external view returns(uint256){

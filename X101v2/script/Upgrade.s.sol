@@ -14,13 +14,16 @@ contract UpgradeScript is Script {
     address  public recipient;
     address  public gas;
     address  public x101v1;
+    address  public admin;
 
     function setUp() public {
         recharge = Recharge(payable(0x5be240960c507F1f9425419512fd765732B0cf65));
         gas = address(0x3c83065B83A8Fd66587f330845F4603F7C49275c);
-        // x101v1 = address();
-        // recipient = address();
+        x101v1 = address(0xa8d372f9151Dc72b7B351EE046BCACEc814dc0b0);
+        recipient = address(0x3862120B1570c5D0285d15c9E0A6a38DdCf6569A);
+        admin = address(0x27500f497A6195913ad93eaA7f9ffce9C156350a);
     }
+
 
     function run() public {
         vm.startBroadcast();
@@ -37,7 +40,10 @@ contract UpgradeScript is Script {
         addrs[0] = address(multiTransfer);
         x101v2.setAllowlist(addrs, true);
         
+        //x101v2代币转移管理员
         x101v2.transferOwnership(recipient);
+        //multiTransfer转移管理员
+        multiTransfer.transferOwnership(admin);
         vm.stopBroadcast();
 
         console.log("X101v2 deployed at:", address(x101v2));

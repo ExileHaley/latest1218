@@ -34,8 +34,9 @@ $ cast abi-encode "constructor(address,address,address)" 0xD4360fAE9a810Be17b5fC
 
 ### Nadi链
 #### gas:0x3c83065B83A8Fd66587f330845F4603F7C49275c
-#### x101:0x6a675a7ed2C3761dA38dbcbF82cDbA5e29e540B9
+#### x101:0xC4134aa1DEA323a8707C16B762262192C922Cd24
 #### recharge contract:0x5be240960c507F1f9425419512fd765732B0cf65
+#### multiTransfer contract:0xF1a07BD213192deeA8dd1d8F3CC882Fd8C508dbF
 
 ### recharge func list
 ```solidity

@@ -458,7 +458,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         TransferHelper.safeApprove(fromToken, uniswapV2Router, amount);
         address[] memory path = new address[](2);
         path[0] = fromToken;
-        path[2] = toToken;
+        path[1] = toToken;
         IUniswapV2Router02(uniswapV2Router).swapExactTokensForTokensSupportingFeeOnTransferTokens(
             amount, 
             0, 

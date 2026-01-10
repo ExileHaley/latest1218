@@ -23,6 +23,7 @@ library Process {
         uint256 shareAward;     //share等级升级前的负债，避免多给
         uint256 subCoinQuota;   //子币额度
         bool    isMigration;    //是否映射旧版本邀请关系
+        bool    underlingExistV5;        //是否存在V5
     }
 
     struct Record{

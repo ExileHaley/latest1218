@@ -47,7 +47,7 @@ contract FinanceTest is Test{
     address public pot;
 
     address public sellFee;
-    address public buyFee;
+    // address public buyFee;
     address public profitFee;
 
     //djs parm init 
@@ -81,7 +81,7 @@ contract FinanceTest is Test{
         pot = address(0x7364032cE6AAbB49721DB4dC1d7a609CA4Bf3d2F);
 
         sellFee = address(0xf3e1Ff26DDC4E7d19a185D662e46EFe88ad469EB);
-        buyFee = address(0x5Cca5A3e2Eef835417A571B28822B1e991b3B246);
+        // buyFee = address(0x5Cca5A3e2Eef835417A571B28822B1e991b3B246);
         profitFee = address(0xA751cD53a795d42c52444A5DA5503949D706500A);
 
         //djs parm init 
@@ -102,7 +102,7 @@ contract FinanceTest is Test{
         djs = new Djs(initialRecipient, marketingForDjs, wallet, USDT);
         djs.setTradingOpen(true);
         address[4] memory addrs = [technology, foundation, marketingForDjsc, pot];
-        djsc = new Djsc(addrs, sellFee, buyFee, USDT);
+        djsc = new Djsc(addrs, sellFee, USDT);
         
         //deploy nodeDividends
         NodeDividends nodeImpl = new NodeDividends();
@@ -213,7 +213,7 @@ contract FinanceTest is Test{
         test_stake_utils(user, address(12), stakeAmount);
 
         // assertEq(uint8(finance.referralInfo(user).level), uint8(Process.Level.V1));
-        (,Process.Level levelUser,,,,,,) = finance.referralInfo(user);
+        (,Process.Level levelUser,,,,,,,) = finance.referralInfo(user);
         assertEq(uint8(levelUser), uint8(Process.Level.V1));
 
         /**
@@ -234,7 +234,7 @@ contract FinanceTest is Test{
         // uint256 shareAward;     //share等级升级前的负债，避免多给
         // uint256 subCoinQuota;   //子币额度
         // bool    isMigration;    //是否映射旧版本邀请关系
-        (,Process.Level levelUser1,,,,,,) = finance.referralInfo(user1);
+        (,Process.Level levelUser1,,,,,,,) = finance.referralInfo(user1);
         assertEq(uint8(levelUser1), uint8(Process.Level.V2));
 
         /**

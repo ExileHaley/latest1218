@@ -23,7 +23,6 @@ contract DeployScript is Script {
     address public pot;
 
     address public sellFee;
-    address public buyFee;
     address public profitFee;
     
 
@@ -40,8 +39,7 @@ contract DeployScript is Script {
     address initialCode;
     address djsv1;
     address recipientForBurn;
-    // address nodeDividends;
-    // address liquidityManager;
+
 
     NodeDividends public nodeDividends;
     address nfts;
@@ -60,15 +58,12 @@ contract DeployScript is Script {
         foundation = address(0x61940dc64161a8fC9672C8E53e5784f13143ff33);
         marketingForDjsc = address(0x81B2d8cbCd1Aceda4CbCbDbD976b2C2ca2591489);
         pot = address(0x7364032cE6AAbB49721DB4dC1d7a609CA4Bf3d2F);
-
         sellFee = address(0xf3e1Ff26DDC4E7d19a185D662e46EFe88ad469EB);
-        buyFee = address(0x5Cca5A3e2Eef835417A571B28822B1e991b3B246);
-        // profitFee = address(0xA751cD53a795d42c52444A5DA5503949D706500A);
+
 
         //djs parm init 
         initialRecipient = address(0xf93BbB196a961F7e8B54900DBb38e84a6d1fC937);
         sellAndProfit = address(0x03C747ffBb61605390d2f275E61a734A9d329e04);
-        // address public nodeDividends;
         walletForProfit = address(0x4cDaC2E5C5125F5D6381109cd14756F05282e59d);
 
         //finance param init
@@ -82,7 +77,7 @@ contract DeployScript is Script {
         djs = new Djs(initialRecipient, sellAndProfit, walletForProfit, address(tether));
         djs.setTradingOpen(true);
         address[4] memory addrs = [technology, foundation, marketingForDjsc, pot];
-        djsc = new Djsc(addrs, sellFee, buyFee, address(tether));
+        djsc = new Djsc(addrs, sellFee, address(tether));
 
         //deploy nodeDividends
         NodeDividends nodeImpl = new NodeDividends();

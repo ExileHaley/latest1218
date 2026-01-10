@@ -26,7 +26,7 @@ contract FinanceView {
         )
     {   
         (stakingUsdt,,,,extracted,) = finance.userInfo(user);
-        (,,,,referralAward,shareAward,,) = finance.referralInfo(user);
+        (,,,,referralAward,shareAward,,,) = finance.referralInfo(user);
 
         //剩余待释放
         uint256 futureTotalAward = stakingUsdt * finance.MULTIPLE();
@@ -51,7 +51,7 @@ contract FinanceView {
             uint256 directNum
         )
     {
-        (recommender,level,referralNum,performance,,,subCoinQuota,) = finance.referralInfo(user);
+        (recommender,level,referralNum,performance,,,subCoinQuota,,) = finance.referralInfo(user);
         address[] memory directs = finance.getDirectReferralAddr(user);
         directNum = directs.length;
     }

@@ -34,7 +34,7 @@ contract DjscTest is Test{
         user = address(6);
 
         address[4] memory addrs = [technology, foundation, marketingForDjsc, pot];
-        djsc = new Djsc(addrs, sellFee, address(0), USDT);
+        djsc = new Djsc(addrs, sellFee, USDT);
 
         addLiquidity_allowlist();
     }
@@ -85,5 +85,27 @@ contract DjscTest is Test{
         uint256 afterSwapUsdtOfSellFee = IERC20(USDT).balanceOf(sellFee);
         console.log("Before:", beforeSwapUsdtOfSellFee);
         console.log("After:",afterSwapUsdtOfSellFee);
+    }
+
+    function test_burn() public {
+        address user1 = address(10);
+        address user2 = address(11);
+
+        assertEq(djsc.latestBurnTime(), 0);
+        vm.startPrank(pot);
+        //这里更新latestBurnTime
+        djsc.transfer(user1, 1e18);
+        assertEq(djsc.latestBurnTime(), block.timestamp);
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + 10 days);
+        vm.startPrank(user1);
+        //第二次转账销毁
+        djsc.transfer(user2, 1e18);
+        assertEq(djsc.balanceOf(djsc.pancakePair()), 10000e18 * 97 / 100);
+        assertEq(djsc.balanceOf(djsc.DEAD()), 10000e18 * 3 / 100);
+        assertEq(djsc.latestBurnTime(), block.timestamp);
+        vm.stopPrank();
+        
     }
 }

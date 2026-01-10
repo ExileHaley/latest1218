@@ -62,17 +62,17 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
     mapping(address => bool) isAddShareAddrs;
 
     address USDT;
-    address public admin;
+    address admin;
     //首码、v1版本、节点、流动性处理地址
     address public initialCode;
-    address public djsv1;
+    address djsv1;
     address public nodeDividends;
     address public liquidityManager;
-    address public recipientForBurn;
+    address recipientForBurn;
     //全局变量
     uint256 public totalStakedUsdt;
     //理财收益计算参数
-    uint256 public perSecondStakedAeward;
+    uint256 perSecondStakedAeward;
     //精度
     uint256 decimals;
 
@@ -321,12 +321,12 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
 
     function processUpgrade(address user, uint256 amount, uint256 num) internal{
         address current = referralInfo[user].recommender;
-        // uint256 num = 0;
-        // if(!isAddDirectReferrals[user]) num = 1;
+        bool isUnderlingExistV5 = false;
         while(current != address(0)){
             Process.Referral storage r = referralInfo[current];
             //人数放在邀请里吧
             if(num > 0) r.referralNum += num;
+            if(isUnderlingExistV5 && !referralInfo[current].underlingExistV5) referralInfo[current].underlingExistV5 = true;
             r.performance += amount;
 
             uint256 directV5 = 0;
@@ -334,7 +334,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
                 address[] storage refs = directReferrals[current];
                 uint256 len = refs.length;
                 for (uint256 i = 0; i < len; ++i) {
-                    if (referralInfo[refs[i]].level == Process.Level.V5) {
+                    if (referralInfo[refs[i]].level == Process.Level.V5 || referralInfo[refs[i]].underlingExistV5) {
                         unchecked { ++directV5; }
                         if (directV5 >= 2) break;
                     }
@@ -347,7 +347,11 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
             if(upgrade) {
                 r.level = newLevel;
                 r.subCoinQuota += subCoinQuotas[newLevel];
-                if(newLevel == Process.Level.SHARE && !isAddShareAddrs[current]) shareAddrs.push(current);
+                if(newLevel == Process.Level.V5) isUnderlingExistV5 = true;
+                if(newLevel == Process.Level.SHARE && !isAddShareAddrs[current]) {
+                    shareAddrs.push(current);
+                    isAddShareAddrs[current] = true;
+                }
             }
             current = r.recommender;
         }
@@ -516,9 +520,9 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         return infos;
     }
 
-    function getShareAddrs() external view returns(address[] memory){
-        return shareAddrs;
-    }
+    // function getShareAddrs() external view returns(address[] memory){
+    //     return shareAddrs;
+    // }
 
     function getDirectReferralAddr(address user) external view returns(address[] memory){
         return directReferrals[user];

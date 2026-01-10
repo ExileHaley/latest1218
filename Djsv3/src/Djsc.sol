@@ -22,9 +22,15 @@ interface IUniswapV2Router02 {
     function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
 }
 
+interface IUniswapV2Pair {
+    function totalSupply() external view returns (uint);
+    function sync() external;
+}
+
 contract Djsc is ERC20, Ownable{
     event SwapAndSendTax(address recipient, uint256 tokensSwapped);
     IUniswapV2Router02 public pancakeRouter = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+    address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
     uint256 public sell_tax_rate = 3;
     uint256 public buy_tax_rate = 100;
     address public sellFee;
@@ -35,19 +41,18 @@ contract Djsc is ERC20, Ownable{
     bool    private swapping;
     mapping(address => bool) public allowlist;
 
+    uint256 public latestBurnTime;
+
     constructor(
         address[4] memory addrs, 
         address _sellFee, 
-        address _buyFee, 
         address _USDT
     )ERC20("DJSC","DJSC")Ownable(msg.sender){
         allocate(addrs);
         USDT = _USDT;
         sellFee = _sellFee;
-        buyFee = _buyFee;
 
         allowlist[_sellFee] = true;
-        allowlist[_buyFee] = true;
 
         pancakePair = IPancakeFactory(pancakeRouter.factory())
             .createPair(address(this), USDT);
@@ -78,20 +83,26 @@ contract Djsc is ERC20, Ownable{
     }
 
     function _update(address from, address to, uint256 amount) internal virtual override {
+        
+        _updateTime();
+
         if (swapping || from == address(0) || to == address(0) || allowlist[from] || allowlist[to]) {
             super._update(from, to, amount);
             return;
         }
 
+        bool isBuy = from == pancakePair;
+        bool isSell = to == pancakePair;
+
         uint256 feeAmount = 0;
-        if (from == pancakePair && buy_tax_rate > 0) {
+        if (isBuy && buy_tax_rate > 0) {
             feeAmount = amount * buy_tax_rate / 100;
             if (feeAmount > 0) {
-                super._update(from, buyFee, feeAmount);
+                super._update(from, DEAD, feeAmount);
             }
         }
 
-        if (to == pancakePair && sell_tax_rate > 0) {
+        if (isSell && sell_tax_rate > 0) {
             feeAmount = amount * sell_tax_rate / 100;
             if (feeAmount > 0) {
                 super._update(from, address(this), feeAmount);
@@ -101,7 +112,7 @@ contract Djsc is ERC20, Ownable{
 
         uint256 sendAmount = amount - feeAmount;
         super._update(from, to, sendAmount);
-
+        if(!isBuy && !isSell) _burnForPair();
     }
 
     function _swap(uint256 amountToken, address to) private{
@@ -112,9 +123,11 @@ contract Djsc is ERC20, Ownable{
         path[0] = address(this);
         path[1] = USDT;
         _approve(address(this), address(pancakeRouter), amountToken);
-         try pancakeRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        uint256 amountOut = getAmountOut(path, amountToken);
+
+        try pancakeRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             amountToken,
-            0, 
+            amountOut * 50 / 100, 
             path,
             to,
             block.timestamp + 30
@@ -123,6 +136,33 @@ contract Djsc is ERC20, Ownable{
         }catch{}
         //update status
         swapping = false;
+    }
+
+    function getAmountOut(address[] memory path, uint256 amount0) public view returns(uint256){
+        if(pancakePair == address(0) || IUniswapV2Pair(pancakePair).totalSupply() < 1e18) return 0;
+        else return pancakeRouter.getAmountsOut(amount0, path)[1];
+    }
+    
+
+    function _updateTime() internal{
+        if(latestBurnTime == 0){
+            if(pancakePair != address(0)) {
+                uint256 lpSupply = IUniswapV2Pair(pancakePair).totalSupply();
+                if(lpSupply > 0) latestBurnTime = block.timestamp;
+            }
+        }
+    }
+
+    function _burnForPair() internal{
+        if(block.timestamp >= latestBurnTime + 1 days) {
+            uint256 balancePair = balanceOf(pancakePair);
+            uint256 remaingSupply = totalSupply() - balanceOf(DEAD);
+            if(remaingSupply > 10000000e18){
+                super._update(pancakePair, DEAD, balancePair * 3 / 100);
+                IUniswapV2Pair(pancakePair).sync();
+                latestBurnTime = block.timestamp;
+            }
+        }
     }
 
 }

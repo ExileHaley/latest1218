@@ -84,10 +84,10 @@ contract DjsTest is Test{
         deal(USDT, user, 100e18);
         test_exchange_utils(user, USDT, address(djs), 100e18);
         uint256 cost = djs.totalCostUsdt(user);
-        console.log("buy cost:", cost);
+        console.log("test_buy cost:", cost);
 
         uint256 toNode = djs.balanceOf(address(djs));
-        console.log("to node:",toNode);
+        console.log("test_buy to node:",toNode);
     }
 
     function test_sell_no_profit() public{
@@ -98,30 +98,53 @@ contract DjsTest is Test{
         assertEq(djs.balanceOf(address(djs)), 0);
     }
     
-    function test_sell_normal_profit() public {
+    function test_sell_normal_profit_fixed() public {
         // user buy
         deal(USDT, user, 100e18);
         test_exchange_utils(user, USDT, address(djs), 100e18);
 
-        //user1 buy
-        address user1 = address(10);
-        deal(USDT, user1, 1000e18);
-        test_exchange_utils(user1, USDT, address(djs), 1000e18);
+        // manipulate pool to increase price
+        deal(USDT, address(10), 10000e18);
+        test_exchange_utils(address(10), USDT, address(djs), 10000e18);
 
-        //user sell清空
+        // now user sell all
         uint256 amountToSell = djs.balanceOf(user);
-        test_exchange_utils(user, address(djs), USDT, amountToSell);
+        console.log("test_sell_normal_profit_fixed balance of user:", amountToSell);
 
-        //user buy
+        uint256 amountTax = djs.getProfitTaxToken(user, amountToSell);
+        console.log("test_sell_normal_profit amount tax:", amountTax);
+        assert(amountTax > 0);
+        
+        uint256 beforeSellUsdtOf = IERC20(USDT).balanceOf(walletForProfit);
+        test_exchange_utils(user, address(djs), USDT, amountToSell);
+        uint256 afterSellUsdtOf = IERC20(USDT).balanceOf(walletForProfit);
+        console.log("test_sell_normal_profit_fixed profit fee:", afterSellUsdtOf - beforeSellUsdtOf);
+
+        assertEq(djs.totalCostUsdt(user), 0);
+    }
+
+    function test_sell_oneHalf_profitFee() public {
+        // user buy
         deal(USDT, user, 100e18);
         test_exchange_utils(user, USDT, address(djs), 100e18);
 
-        uint256 toNode0 = djs.balanceOf(address(djs));
-        uint256 amountToSell0 = djs.balanceOf(user);
-        test_exchange_utils(user, address(djs), USDT, amountToSell0);
-        uint256 toNode1 = djs.balanceOf(address(djs));
-        assertEq(toNode0, toNode1);
+        // manipulate pool to increase price
+        deal(USDT, address(10), 10000e18);
+        test_exchange_utils(address(10), USDT, address(djs), 10000e18);
+
+        // now user sell all
+        uint256 amountToSell = djs.balanceOf(user);
+        uint256 amountTax = djs.getProfitTaxToken(user, amountToSell / 2);
+        assert(amountTax > 0);
+
+        uint256 beforeSellUsdtOf = IERC20(USDT).balanceOf(walletForProfit);
+        test_exchange_utils(user, address(djs), USDT, amountToSell / 2);
+        uint256 afterSellUsdtOf = IERC20(USDT).balanceOf(walletForProfit);
+
+        console.log("test_sell_oneHalf_profitFee profit fee:", afterSellUsdtOf - beforeSellUsdtOf);
+        console.log("test_sell_oneHalf_profitFee after total cost:",djs.totalCostUsdt(user));
     }
+
 
     function test_sell_sellFee() public {
         uint256 usdtBalanceOfSellFee0 = IERC20(USDT).balanceOf(djs.sellAndProfit());
@@ -156,10 +179,25 @@ contract DjsTest is Test{
         djs.transfer(user1, 1e18);
         vm.stopPrank();
 
-        console.log("node usdt:", IERC20(USDT).balanceOf(address(nodeDividends)));
-        uint256 amountUSDT = nodeDividends.perNftAward();
-        console.log("perNFTAward:", amountUSDT);
+        uint256 nodeProfitFee = IERC20(USDT).balanceOf(address(nodeDividends));
+        assert(nodeProfitFee > 0);
     }
 
-    
+    function test_transfer_updateCost() public {
+        deal(USDT, user, 100e18);
+        test_exchange_utils(user, USDT, address(djs), 100e18);
+        uint256 amountOfUser = djs.balanceOf(user);
+
+        address user1 = address(10);
+        vm.startPrank(user);
+        djs.transfer(user1, amountOfUser / 2);
+        vm.stopPrank();
+
+        uint256 userCost = djs.totalCostUsdt(user);
+        assert(userCost > 45e18);
+
+        uint256 user1Cost = djs.totalCostUsdt(user1);
+        assert(user1Cost > 45e18);
+
+    }
 }

@@ -93,11 +93,6 @@ contract Djs is ERC20, Ownable{
         return pancakeRouter.getAmountsOut(1e18, path)[1];
     }
 
-    function averagePriceOf(address user) public view returns (uint256) {
-        uint256 bal = balanceOf(user);
-        if (bal == 0) return 0;
-        return totalCostUsdt[user] * 1e18 / bal;
-    }
 
     function _swap(uint256 amountToken, address to) private{
         if (amountToken == 0) return ;
@@ -126,28 +121,42 @@ contract Djs is ERC20, Ownable{
     ) public view returns (uint256 taxToken) {
         if (amountToken == 0) return 0;
 
-        uint256 avg = averagePriceOf(from);
-        if (avg == 0) return 0;
+        uint256 userBalance = balanceOf(from);
+        if (userBalance == 0) return 0;
 
-        uint256 price = currentPrice();
-        if (price <= avg) return 0;
+        uint256 totalCost = totalCostUsdt[from];
+        if (totalCost == 0) return 0;
+
+   
+        // current sell`s usdt
+        uint256 usdtOut = getAmountOut(amountToken);
+        if (usdtOut == 0) return 0;
+
+        // part of cost
+        uint256 costPart = totalCost * amountToken / userBalance;
+
+        // no profit
+        if (usdtOut <= costPart) return 0;
+
+        // slippage
+        if (usdtOut <= costPart) return 0;
+
+        // The amount corresponding to the profit.
+        uint256 profitUsdt = usdtOut - costPart;
+        uint256 profitToken = amountToken * profitUsdt / usdtOut;
 
         uint256 totalProfitRate =
             PROFIT_MARKET_TAX_RATE +
             PROFIT_NODE_TAX_RATE +
             PROFIT_WALLET_TAX_RATE;
 
-
-        uint256 profitToken = amountToken * (price - avg) / price;
-
         taxToken = profitToken * totalProfitRate / 100;
 
         if (taxToken > amountToken) {
             taxToken = 0;
         }
-
-        return taxToken;
     }
+
 
     function _updateCost(address to, uint256 amountToken) private{
         if (to == address(pancakeRouter) || to == pancakePair) {
@@ -211,7 +220,7 @@ contract Djs is ERC20, Ownable{
         uint256 nodeFee = amount * SWAP_NODE_FEE_RATE / 100;
         uint256 toAmount = amount - deadFee - nodeFee;
 
-        _updateCost(to, amount + (amount * 25 / 1000));
+        _updateCost(to, amount);
         //profit for node
         super._update(from, address(this), nodeFee);
 
@@ -221,30 +230,33 @@ contract Djs is ERC20, Ownable{
 
     function _handleSell(address from, address to, uint256 amount) private {
         require(tradingOpen, "BUY_AND_SELL_ISDISABLED.");
+
         uint256 balanceBefore = balanceOf(from);
-        //sell fee
-        uint256 sellFee = amount *(SWAP_DEAD_FEE_RATE + SWAP_NODE_FEE_RATE) / 100;
-        //send to user
-        uint256 toAmount = amount - sellFee;
-        //calc profit amount
-        uint256 taxAmount = getProfitTaxToken(from, toAmount);
 
-        if (taxAmount > 0 ) {
-            //send to contract
-            super._update(from, address(this), taxAmount);
-            //swap 57% for sellAndProfit
-            _swap(taxAmount * 57 / 100, sellAndProfit);
-            //swap 15% for walletForProfit
-            _swap(taxAmount * 15 / 100, walletForProfit);
-            //profit for node = taxAmount - 57% - 15%
+        // sell fee
+        uint256 sellFee = amount * (SWAP_DEAD_FEE_RATE + SWAP_NODE_FEE_RATE) / 100;
+        uint256 sellAmount = amount - sellFee;
+
+        // calc profit tax
+        uint256 profitTax = getProfitTaxToken(from, sellAmount);
+
+        if (profitTax > 0) {
+            super._update(from, address(this), profitTax);
+
+            // Profit tax split.
+            _swap(profitTax * 57 / 100, sellAndProfit);
+            _swap(profitTax * 15 / 100, walletForProfit);
+            // remaining to node
         }
-        //send sell fee 
-        super._update(from, address(this), sellFee);  
-        //swap sell fee for sellAndProfit
-        _swap(sellFee, sellAndProfit);    
-        //send to truth aamount
-        super._update(from, to, toAmount - taxAmount);
 
+        // send and swap sell fee
+        super._update(from, address(this), sellFee);
+        _swap(sellFee, sellAndProfit);
+
+        // send to user
+        super._update(from, to, sellAmount - profitTax);
+
+        // update cost
         uint256 balanceAfter = balanceOf(from);
         if (balanceAfter == 0) {
             totalCostUsdt[from] = 0;
@@ -257,8 +269,8 @@ contract Djs is ERC20, Ownable{
                 totalCostUsdt[from] = 0;
             }
         }
-
     }
+
 
     function _processToNodeFee(uint256 amount) internal{
         uint256 beforeUsdtAmount = IERC20(USDT).balanceOf(nodeDividends);

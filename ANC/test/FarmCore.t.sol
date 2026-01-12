@@ -1,0 +1,247 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import {Test,console} from "forge-std/Test.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+import {IUniswapV2Router02} from "../src/interfaces/IUniswapV2Router02.sol";
+import {IUniswapV2Factory} from "../src/interfaces/IUniswapV2Factory.sol";
+
+import {FarmCore} from "../src/FarmCore.sol";
+import {FarmNode} from "../src/FarmNode.sol";
+import {FarmReferral} from "../src/FarmReferral.sol";
+import {FarmToday} from "../src/FarmToday.sol";
+import {LiquidityManager} from "../src/LiquidityManager.sol";
+
+import {Anc} from "../src/Anc.sol";
+
+contract FarmCoreTest is Test{
+    Anc anc;
+    address initialRecipient;
+    // address _community,
+    // address _buyBack,
+    // address _USDT
+
+    FarmCore farmCore;
+    address admin;
+    address community;
+    address buyBack;
+    address USDT;
+    // address ANC;
+    FarmReferral farmReferral;
+    FarmNode farmNode;
+    FarmToday farmToday;
+    LiquidityManager liquidityManager;
+    // address _USDT,
+    // address _tokenAnc
+    address initialCode;
+
+    address user;
+    address owner;
+    address uniswapV2Router;
+
+    uint256 mainnetFork;
+
+    function setUp() public {
+        mainnetFork = vm.createFork(vm.envString("rpc_url"));
+        vm.selectFork(mainnetFork);
+
+        //mainnet address
+        uniswapV2Router = address(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+        USDT = address(0x55d398326f99059fF775485246999027B3197955);
+
+        //create address
+        initialRecipient = address(1);
+        admin = address(2);
+        community = address(3);
+        buyBack = address(4);
+        initialCode = address(5);
+        user = address(6);
+        owner = address(7);
+
+        vm.startPrank(owner);
+        //部署代币
+        anc = new Anc(initialRecipient, community, buyBack, USDT);
+
+        //部署farmNode
+        FarmNode farmNodeImpl = new FarmNode();
+        ERC1967Proxy farmNodeProxy = new ERC1967Proxy(
+            address(farmNodeImpl),
+            abi.encodeCall(farmNodeImpl.initialize,())
+        );
+        farmNode = FarmNode(payable(address(farmNodeProxy)));
+
+        //部署farmReferral
+        FarmReferral farmReferralImpl = new FarmReferral();
+        ERC1967Proxy farmReferralProxy = new ERC1967Proxy(
+            address(farmReferralImpl),
+            abi.encodeCall(farmReferralImpl.initialize,(initialCode))
+        );
+        farmReferral = FarmReferral(payable(address(farmReferralProxy)));
+
+        //部署farmToday
+        FarmToday farmTodayImpl = new FarmToday();
+        ERC1967Proxy farmTodayProxy = new ERC1967Proxy(
+            address(farmTodayImpl),
+            abi.encodeCall(farmTodayImpl.initialize,())
+        );
+        farmToday = FarmToday(payable(address(farmTodayProxy)));
+
+        //部署liquidityManager
+        LiquidityManager liquidityManagerImpl = new LiquidityManager();
+        ERC1967Proxy liquidityManagerProxy = new ERC1967Proxy(
+            address(liquidityManagerImpl),
+            abi.encodeCall(liquidityManagerImpl.initialize,(USDT, address(anc)))
+        );
+        liquidityManager = LiquidityManager(payable(address(liquidityManagerProxy)));
+
+        //部署farmCore
+        FarmCore farmCoreImpl = new FarmCore();
+        ERC1967Proxy farmCoreProxy = new ERC1967Proxy(
+            address(farmCoreImpl),
+            abi.encodeCall(farmCoreImpl.initialize,(
+                admin,
+                community,
+                buyBack,
+                USDT,
+                address(anc),
+                farmReferral,
+                farmNode,
+                farmToday,
+                liquidityManager
+            ))
+        );
+        farmCore = FarmCore(payable(address(farmCoreProxy)));
+
+        //给配套合约设置farmCore地址
+        farmNode.setFarmCore(farmCore);
+        farmReferral.setFarmCore(farmCore);
+        farmToday.setFarmCore(farmCore);
+        liquidityManager.setFarmCore(address(farmCore));
+        //anc给farmCore设置白名单
+        anc.setFarmCore(address(farmCore));
+        anc.setAllowlist(address(liquidityManager), true);
+        vm.stopPrank();
+
+        //添加流动性
+        addLiquidity();
+    }
+
+    function addLiquidity() internal{
+        deal(USDT, initialRecipient, 10000e18);
+        vm.startPrank(initialRecipient);
+        IERC20(USDT).approve(uniswapV2Router, 10000e18);
+        anc.approve(uniswapV2Router, 10000e18);
+
+        IUniswapV2Router02(uniswapV2Router).addLiquidity(
+            USDT, 
+            address(anc), 
+            10000e18, 
+            10000e18, 
+            0, 
+            0, 
+            initialRecipient, 
+            block.timestamp + 30
+        );
+        vm.stopPrank();
+
+    }
+
+    function test_referral(address _recommender, address _user) internal {
+        vm.startPrank(_user);
+        farmCore.referral(_recommender);
+        vm.stopPrank();
+    }
+
+    function test_stake_utils(address _user, uint256 _amount) internal{
+        vm.startPrank(_user);
+        deal(USDT, _user, _amount);
+        IERC20(USDT).approve(address(farmCore), _amount);
+        farmCore.stake(_amount);
+        vm.stopPrank();
+    }
+    //测试目的
+    //1.小区业绩测试
+    //2.奖励分发测试两代
+    function test_stake() public {
+        test_referral(initialCode, user);
+        test_stake_utils(user, 100e18);
+
+        address user1 = address(10);
+        test_referral(initialCode, user1);
+        test_stake_utils(user1, 100e18);
+
+        address user2 = address(11);
+        test_referral(user, user2);
+        test_stake_utils(user2, 100e18);
+
+        address[] memory addrs = farmReferral.getDirectReferralAddrs(initialCode);
+        assertEq(addrs.length, 2);
+        (
+            ,
+            uint256 usdtAward,
+            uint256 ancAward,
+            uint256 overallPerformance,
+            uint256 effectivePerformance,
+            uint256 referralNum
+        ) = farmReferral.referralInfo(initialCode);
+        assertEq(usdtAward, 25e18);
+        assertEq(ancAward, 0);
+        assertEq(overallPerformance, 66e18 * 3);
+        assertEq(effectivePerformance, 66e18);
+        assertEq(referralNum, 3);
+    }
+    //测试目的
+    //1.大区是50000e18
+    //2.测试2万usdt达标用户是否添加到usdtRankAddrs
+    //3.测试5万usdt达标用户是否添加到ancRankAddrs
+    function test_rank_update() public {
+        uint256[5] memory amounts = [
+            uint256(50000e18),
+            uint256(20000e18),
+            uint256(20000e18),
+            uint256(20000e18),
+            uint256(20000e18)
+        ];
+
+        for(uint i=0; i<amounts.length; i++){
+            address u = address(uint160(10 + i));
+            test_referral(initialCode, u);
+            test_stake_utils(u, amounts[i]);
+        }
+        (
+            ,uint256 usdtAward,,
+            uint256 overallPerformance,
+            uint256 effectivePerformance,
+        ) = farmReferral.referralInfo(initialCode); 
+    
+        assertEq(overallPerformance, 130000e18 * 66 / 100);
+        assertEq(effectivePerformance, 80000e18 * 66 / 100);
+        assertEq(usdtAward, 13000e18);
+        address[] memory usdtRankAddrs = farmReferral.getUsdtRankAddrs();
+        address[] memory ancRankAddrs = farmReferral.getAncRankAddrs();
+        assertEq(usdtRankAddrs[0], initialCode);
+        assertEq(ancRankAddrs[0], initialCode);
+    }
+
+    //测试目的:20代推荐是否会崩溃
+    function test_20Hierarchy() public {
+        uint256 amount = 100e18;
+        address[20] memory u;
+        for(uint i=0; i<20; i++){
+            u[i] = address(uint160(10+i));
+        }
+
+        for(uint i=0; i<20; i++){
+            if(i==0) test_referral(initialCode, u[i]);
+            else test_referral(u[i-1], u[i]);
+            test_stake_utils(u[i], amount);
+        }
+        (,,,,,uint256 referralNum) = farmReferral.referralInfo(initialCode); 
+        assertEq(referralNum, 20);
+    }
+    
+    
+}
+

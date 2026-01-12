@@ -97,15 +97,15 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         uniswapV2factory = IUniswapV2Router02(uniswapV2Router).factory();
     }
 
-    function changeRecipient(address _newRecipient) external onlyAdmin {
-        require(_newRecipient != address(0), "ZERO_ADDRESS.");
-        recipient = _newRecipient;
-    }
+    // function changeRecipient(address _newRecipient) external onlyAdmin {
+    //     require(_newRecipient != address(0), "ZERO_ADDRESS.");
+    //     recipient = _newRecipient;
+    // }
 
-    function changeSender(address _newSender) external onlyAdmin(){
-        require(_newSender != address(0), "ZERO_ADDRESS.");
-        sender = _newSender;
-    }
+    // function changeSender(address _newSender) external onlyAdmin(){
+    //     require(_newSender != address(0), "ZERO_ADDRESS.");
+    //     sender = _newSender;
+    // }
 
     function setAllocation(address token, address[] calldata recipients, uint256[] calldata rates) external onlyAdmin(){
         require(recipients.length == rates.length, "Error array data.");
@@ -340,36 +340,37 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         return infos;
     }
 
-    // function getPrice(address token) external view returns(address, uint256) {
-    //     address pairWBNB = IUniswapV2Factory(uniswapV2factory).getPair(token, WBNB);
-    //     address pairUSDT = IUniswapV2Factory(uniswapV2factory).getPair(token, USDT);
+    function getPrice(address token) external view returns(address, uint256) {
+        address pairWBNB = IUniswapV2Factory(uniswapV2factory).getPair(token, WBNB);
+        address pairUSDT = IUniswapV2Factory(uniswapV2factory).getPair(token, USDT);
 
-    //     uint256 amountIn = 1e18; // 假设 token 有 18 位精度
-    //     uint256 amountOut;
+        uint256 amountIn = 1e18; // 假设 token 有 18 位精度
+        uint256 amountOut;
 
-    //     // 优先返回 USDT 交易对
-    //     if(pairUSDT != address(0)) {
-    //         address[] memory path = new address[](2);
-    //         path[0] = token;
-    //         path[1] = USDT;
-    //         uint256[] memory amountsOut = IUniswapV2Router02(uniswapV2Router).getAmountsOut(amountIn, path);
-    //         amountOut = amountsOut[amountsOut.length - 1]; 
-    //         return (USDT, amountOut);
-    //     }
+        // 优先返回 USDT 交易对
+        if(pairUSDT != address(0)) {
+            address[] memory path = new address[](2);
+            path[0] = token;
+            path[1] = USDT;
+            uint256[] memory amountsOut = IUniswapV2Router02(uniswapV2Router).getAmountsOut(amountIn, path);
+            amountOut = amountsOut[amountsOut.length - 1]; 
+            return (USDT, amountOut);
+        }
 
-    //     // 否则返回 WBNB 交易对
-    //     if(pairWBNB != address(0)) {
-    //         address[] memory path = new address[](2);
-    //         path[0] = token;
-    //         path[1] = WBNB;
-    //         uint256[] memory amountsOut = IUniswapV2Router02(uniswapV2Router).getAmountsOut(amountIn, path);
-    //         amountOut = amountsOut[amountsOut.length - 1];
-    //         return (WBNB, amountOut);
-    //     }
+        // 否则返回 WBNB 交易对
+        if(pairWBNB != address(0)) {
+            address[] memory path = new address[](2);
+            path[0] = token;
+            path[1] = WBNB;
+            uint256[] memory amountsOut = IUniswapV2Router02(uniswapV2Router).getAmountsOut(amountIn, path);
+            amountOut = amountsOut[amountsOut.length - 1];
+            return (WBNB, amountOut);
+        }
 
-    //     // 如果两个交易对都不存在，返回 0
-    //     return (address(0), 0);
-    // }
+        // 如果两个交易对都不存在，返回 0
+        return (address(0), 0);
+    }
+    
     // function getAllowance(address token, address owner) public view  returns (uint256){
     //     return IERC20(token).allowance(owner, address(this));
     // }

@@ -17,8 +17,9 @@ import { FarmNode } from "../src/FarmNode.sol";
 import { FarmToday } from "../src/FarmToday.sol";
 
 
-interface IFarmReferral{
-    function getRecommender(address user) external view returns(address); 
+
+interface IAnc{
+    function burnFromPair() external returns(uint256); 
 }
 
 contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard{
@@ -63,7 +64,7 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
     //2万usdt达标用户奖励数据存储
     uint256 public cumulateAwardForUsdtRank;
     //5万usdt达标用户的奖励数据存储，分发anc
-    uint256 public cumulateAwardForAncRank;
+    // uint256 public cumulateAwardForAncRank;
     //英雄榜奖励数据存储
     uint256 public cumulateAwardForTodayTop;
 
@@ -184,21 +185,29 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         farmReferral.processRedeemReferralInfo(msg.sender, order.stakingUsdt);
     }
 
-    function updateFarm(uint256 amount) external {
+    function updateFarmUsdt(uint256 amount) external {
         require(msg.sender == ANC, "Not permit.");
+        uint256 forNode = amount * 40 / 100;
+        uint256 forSmall = forNode * 40 / 100;
+        uint256 forLarge = forNode - (forNode * 80 / 100);
+        cumulateAwardForNode[Process.NodeType.SMALL] += forSmall;
+        cumulateAwardForNode[Process.NodeType.MEDIUM] += forSmall;
+        cumulateAwardForNode[Process.NodeType.LARGE] += forLarge;
 
-        // 78% 分给所有质押用户
-        uint256 totalForStakers = amount * 78 / 100;
-        uint256 totalForAncRank = amount - totalForStakers; // 22%
+        uint256 forUsdtRank = amount * 40 / 100;
+        cumulateAwardForUsdtRank += forUsdtRank;
+
+        uint256 forTodayTop = amount - forNode - forUsdtRank;
+        cumulateAwardForTodayTop += forTodayTop;
+
+    }
+
+    function updateFarmAnc(uint256 amount) internal {
+        uint256 totalForStakers = amount;
 
         if (totalStakeValidUsdt > 0) {
-            // 每个质押 1 USDT 的用户应获得的 ANC 奖励
-            // 累加到 perStakeUsdtAwardAnc
             perStakeUsdtAwardAnc += totalForStakers * decimals / totalStakeValidUsdt;
         }
-
-        // 22% 累加到 cumulateAwardForAncRank
-        cumulateAwardForAncRank += totalForAncRank;
     }
 
     //getUserTruthAward + claimUsdt + claimAnc这三个逻辑不连贯
@@ -242,8 +251,10 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
     
 
     function issueAncRankAward() public {
-        farmReferral.issueAncAwardForRank(cumulateAwardForAncRank);
-        cumulateAwardForAncRank  = 0;
+        uint256 amountAnc = IAnc(ANC).burnFromPair();
+        uint256 toStaking = amountAnc * 78 / 100;
+        updateFarmAnc(toStaking);
+        farmReferral.issueAncAwardForRank(amountAnc - toStaking);
     }
 
     function issueTodayTopUsdtAward() public {

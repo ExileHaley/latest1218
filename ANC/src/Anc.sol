@@ -24,7 +24,7 @@ interface IUniswapV2Router02 {
 
 interface IFarm {
     function updateFarmUsdt(uint256 amount) external;
-    function updateFarmToken(uint256 amount) external;
+    function updateFarmAnc(uint256 amount) external;
 }
 
 contract Anc is ERC20, Ownable{
@@ -37,7 +37,8 @@ contract Anc is ERC20, Ownable{
     //addr config
     address public community; //20%
     address public buyBack; //30%
-    address public farm;
+    address public recipient;
+    address public farmCore;
     //mainnet config
     address public pancakePair;
     address public USDT;
@@ -73,15 +74,20 @@ contract Anc is ERC20, Ownable{
         latestBurnTime = block.timestamp;
     }
 
+    modifier onlyFarmCore() {
+        require(farmCore == msg.sender, "Not permit.");
+        _;
+    }
+
 
     function setFeeRate(uint256 _sellRate, uint256 _buyRate) external onlyOwner{
         sell_fee_rate = _sellRate;
         buy_fee_rate = _buyRate;
     }
 
-    function setFarmCore(address _farm) external onlyOwner{
-        farm = _farm;
-        allowlist[_farm] = true;
+    function setFarmCore(address _farmCore) external onlyOwner{
+        farmCore = _farmCore;
+        allowlist[_farmCore] = true;
     }
 
     function setAllowlist(address user, bool isAllow) external onlyOwner{
@@ -106,16 +112,18 @@ contract Anc is ERC20, Ownable{
         if(isSell){
             feeAmount = amount * sell_fee_rate / 100;
             super._update(from, address(this), feeAmount);
-            if(farm != address(0)){
+
+            if(farmCore != address(0)){
                 uint256 feeAmountPercent20 = feeAmount * 20 / 100;
                 uint256 feeAmountPercent30 = feeAmount * 30 / 100;
                 _swap(feeAmountPercent20, community);
                 _swap(feeAmountPercent30, buyBack);
-                uint256 beforeAmount = IERC20(USDT).balanceOf(farm);
-                _swap(feeAmount - feeAmountPercent20 - feeAmountPercent30, farm);
-                uint256 afterAmount = IERC20(USDT).balanceOf(farm);
-                IFarm(farm).updateFarmUsdt(afterAmount - beforeAmount);
+                uint256 beforeAmount = IERC20(USDT).balanceOf(farmCore);
+                _swap(feeAmount - feeAmountPercent20 - feeAmountPercent30, farmCore);
+                uint256 afterAmount = IERC20(USDT).balanceOf(farmCore);
+                IFarm(farmCore).updateFarmUsdt(afterAmount - beforeAmount);
             }
+
         }
 
         super._update(from, to, amount - feeAmount);
@@ -157,69 +165,69 @@ contract Anc is ERC20, Ownable{
         uint256 newIssueRate
     );
 
-    //分发模块新增80%的上限
-    //70%静态
-    //20%分业绩
-    //10%打给一个地址
-    function burnFromPair() external {
-        require(farm != address(0), "FARM_NOT_SET");
-        require(totalSupply() - balanceOf(DEAD) > 21_000_000e18, "STOP_ISSUE");
-        uint256 passedDays = (block.timestamp - latestBurnTime) / 1 days;
-        if(passedDays == 0) return;
-        
+    
+    function burnFromPair() external onlyFarmCore returns (uint256) {
+        require(farmCore != address(0), "FARM_NOT_SET");
+        require(recipient != address(0), "INVALID_RECIPIENT");
+        require(totalSupply() - balanceOf(DEAD) > 10_000_000e18, "STOP_ISSUE");
+
+        // 1. calc days
+        uint256 realDays = (block.timestamp - latestBurnTime) / 1 days;
+        if (realDays == 0) return 0;
+
         uint256 pairBalance = balanceOf(pancakePair);
-        require(pairBalance > 0, "PAIR_EMPTY");
+        if(pairBalance == 0) return 0;
 
-        // current total rate
-        uint256 totalRate = passedDays * TOTAL_BURN_RATE; // 3% * days
-        if (totalRate > 100) {
-            totalRate = 100; // max rate limit
+        // 2. limit 3%
+        uint256 totalAmount = pairBalance * TOTAL_BURN_RATE / 100;
+        if (totalAmount == 0) return 0;
+
+        // 3. 10% => recipient
+        uint256 recipientAmount = totalAmount * 10 / 100;
+        uint256 remainAmount = totalAmount - recipientAmount;
+
+        // 4. calc and limit farm rate
+        uint256 newIssueRate = issueRate + ADD_ISSUE_RATE * realDays;
+        if (newIssueRate > 8000) {
+            newIssueRate = 8000;
         }
 
-        uint256 totalAmount = pairBalance * totalRate / 100;
-        if(totalAmount == 0) return;
+        uint256 farmAmount = remainAmount * newIssueRate / 10000;
+        uint256 burnAmount = remainAmount - farmAmount;
 
-        // 2. farm rate / 10000
-        uint256 farmRate = issueRate + ADD_ISSUE_RATE * passedDays;
-        if (farmRate > 10000) {
-            farmRate = 10000;
-        }
-
-        uint256 farmAmount = totalAmount * farmRate / 10000;
-        uint256 burnAmount = totalAmount - farmAmount;
-
-        // 3. token from pair to this.
+        // 5. anc from pair to address(this)
         super._update(pancakePair, address(this), totalAmount);
 
-        // 4. token to farm.
-        if (farmAmount > 0) {
-            super._update(address(this), farm, farmAmount);
-            IFarm(farm).updateFarmToken(farmAmount);
+        // 6. send to recipient
+        if (recipientAmount > 0) {
+            super._update(address(this), recipient, recipientAmount);
         }
 
-        // 5. token to dead.
+        // 7. send to farm
+        if (farmAmount > 0) {
+            super._update(address(this), farmCore, farmAmount);
+        }
+
+        // 8. send to dead
         if (burnAmount > 0) {
             super._update(address(this), DEAD, burnAmount);
         }
 
-        // 6. sync issueRate 
-        issueRate += ADD_ISSUE_RATE * passedDays;
-        if (issueRate > 10000) {
-            issueRate = 10000;
-        }
-
-        // 7. sync time
-        latestBurnTime += passedDays * 1 days;
+        // 9. update status
+        issueRate = newIssueRate;
+        latestBurnTime += realDays * 1 days;
 
         emit BurnFromPair(
-            passedDays,
+            realDays,
             totalAmount,
             farmAmount,
             burnAmount,
             issueRate
         );
 
+        return farmAmount;
     }
+
 
 
 

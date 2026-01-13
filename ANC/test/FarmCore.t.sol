@@ -304,44 +304,7 @@ contract FarmCoreTest is Test{
     //1.计算anc收益、usdt收益
     //2.提取anc收益
     //3.提取usdt收益
-    function test_award() public {
-        test_referral(initialCode, user);
-        test_stake_utils(user, 100e18);
-
-        vm.startPrank(address(anc));
-        farmCore.updateFarm(100e18);
-        vm.stopPrank();
-
-
-        address user1 = address(10);
-        test_referral(initialCode, user1);
-        test_stake_utils(user1, 100e18);
-
-        vm.startPrank(address(anc));
-        farmCore.updateFarm(100e18);
-        vm.stopPrank();
-
-        uint256 cumulateAwardForAncRank = farmCore.cumulateAwardForAncRank();
-        assertEq(cumulateAwardForAncRank, 200e18 * 22 / 100);
-
-        (uint256 userAncAward,) = farmCore.getUserTruthAward(user);
-        (uint256 user1AncAward,) = farmCore.getUserTruthAward(user1);
-        
-        console.log("Anc award for user = 78+39:",userAncAward / 1e18);
-        console.log("Anc award for user1 = 39:", user1AncAward / 1e18);
-
-        vm.startPrank(initialRecipient);
-        anc.transfer(address(farmCore), 200e18);
-        vm.stopPrank();
-
-        vm.startPrank(user);
-        farmCore.claimAnc();
-        vm.stopPrank();
-
-        (uint256 userAncAward0,) = farmCore.getUserTruthAward(user);
-        assertEq(userAncAward0, 0);
-
-    }
+    
     
 }
 

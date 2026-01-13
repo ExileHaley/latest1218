@@ -348,7 +348,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         uint256 amountOut;
 
         // 优先返回 USDT 交易对
-        if(pairUSDT != address(0)) {
+        if(pairUSDT != address(0) && IERC20(pairUSDT).totalSupply() >= 1000e18) {
             address[] memory path = new address[](2);
             path[0] = token;
             path[1] = USDT;
@@ -358,7 +358,7 @@ contract Recharge is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         }
 
         // 否则返回 WBNB 交易对
-        if(pairWBNB != address(0)) {
+        if(pairWBNB != address(0) && IERC20(pairUSDT).totalSupply() >= 1000e18) {
             address[] memory path = new address[](2);
             path[0] = token;
             path[1] = WBNB;

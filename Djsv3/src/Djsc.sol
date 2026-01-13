@@ -158,7 +158,7 @@ contract Djsc is ERC20, Ownable{
             uint256 balancePair = balanceOf(pancakePair);
             uint256 remaingSupply = totalSupply() - balanceOf(DEAD);
             if(remaingSupply > 10000000e18){
-                super._update(pancakePair, DEAD, balancePair * 3 / 100);
+                super._update(pancakePair, DEAD, balancePair * 3 / 1000);
                 IUniswapV2Pair(pancakePair).sync();
                 latestBurnTime = block.timestamp;
             }

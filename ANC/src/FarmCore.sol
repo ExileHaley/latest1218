@@ -201,23 +201,77 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         cumulateAwardForAncRank += totalForAncRank;
     }
 
-
+    //getUserTruthAward + claimUsdt + claimAnc这三个逻辑不连贯
     function getUserTruthAward(address user) public view returns(uint256 ancAward, uint256 usdtAward){
-        // TODO 要考虑两者分发的精度问题，现在的处理方案是假设没有精度
-        // (,uint256 usdtAward,uint256 ancAward,,,) = farmReferral.referralInfo(user);
         User memory u = userInfo[user];
-        (,uint256 usdtReferralAward,uint256 ancReferralAward,,,) = farmReferral.referralInfo(user);
+        (, uint256 usdtReferralAward, uint256 ancReferralAward,,,) = farmReferral.referralInfo(user);
         uint256 usdtNodeAward = farmNode.usdtNodeAward(user);
         uint256 usdtTodayAward = farmToday.usdtTodayAward(user);
-        usdtAward = (usdtReferralAward + usdtNodeAward + usdtTodayAward) - u.extractedUsdt;
-        uint256 currentAwardAnc = (u.stakingUsdt * perStakeUsdtAwardAnc - u.debt) / decimals;
-        ancAward = currentAwardAnc + u.pendingAnc + ancReferralAward - u.extractedAnc;
+
+        uint256 totalUsdt = usdtReferralAward + usdtNodeAward + usdtTodayAward;
+        uint256 totalAnc = u.stakingUsdt * perStakeUsdtAwardAnc / decimals + u.pendingAnc + ancReferralAward;
+
+        usdtAward = totalUsdt > u.extractedUsdt ? totalUsdt - u.extractedUsdt : 0;
+        ancAward = totalAnc > u.extractedAnc ? totalAnc - u.extractedAnc : 0;
     }
 
-    function claimAnc() external{
-        
+    function claimUsdt() external nonReentrant {
+        (, uint256 usdtAward) = getUserTruthAward(msg.sender);
+        require(usdtAward > 0, "No USDT reward");
+
+        userInfo[msg.sender].extractedUsdt += usdtAward;
+        TransferHelper.safeTransfer(USDT, msg.sender, usdtAward);
     }
 
-    function claimUsdt() external{}
+    function claimAnc() external nonReentrant {
+        (uint256 ancAward, ) = getUserTruthAward(msg.sender);
+        require(ancAward > 0, "No ANC reward");
+
+        User storage u = userInfo[msg.sender];
+        u.extractedAnc += ancAward;
+        u.pendingAnc = 0;
+        u.debt = u.stakingUsdt * perStakeUsdtAwardAnc;
+
+        TransferHelper.safeTransfer(ANC, msg.sender, ancAward);
+    }
+
+    function issueUsdtRankAward() public {
+        farmReferral.issueUsdtAwardForRank(cumulateAwardForUsdtRank);
+        cumulateAwardForUsdtRank = 0;
+    }
+    
+
+    function issueAncRankAward() public {
+        farmReferral.issueAncAwardForRank(cumulateAwardForAncRank);
+        cumulateAwardForAncRank  = 0;
+    }
+
+    function issueTodayTopUsdtAward() public {
+        farmToday.issueTodayTopAward(cumulateAwardForTodayTop);
+        cumulateAwardForTodayTop = 0;
+    }
+
+    function issueSmallNodeAward() public {
+        Process.NodeType[] memory nodeTypes = new Process.NodeType[](1);
+        nodeTypes[0] = Process.NodeType.SMALL;
+
+        uint256[] memory amounts = new uint256[](1);
+        amounts[0] = cumulateAwardForNode[Process.NodeType.SMALL];
+
+        farmNode.issueNodeAward(nodeTypes, amounts);
+    }
+
+    function issueOtherNodeAward() public {
+        Process.NodeType[] memory nodeTypes = new Process.NodeType[](2);
+        nodeTypes[0] = Process.NodeType.MEDIUM;
+        nodeTypes[1] = Process.NodeType.LARGE;
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = cumulateAwardForNode[Process.NodeType.MEDIUM];
+        amounts[1] = cumulateAwardForNode[Process.NodeType.LARGE];
+
+        farmNode.issueNodeAward(nodeTypes, amounts);
+    }
+
 
 }

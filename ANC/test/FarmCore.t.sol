@@ -161,6 +161,13 @@ contract FarmCoreTest is Test{
         farmCore.stake(_amount);
         vm.stopPrank();
     }
+
+    function test_redeem_utils(address _user, uint256 _idx) internal{
+        vm.startPrank(_user);
+        farmCore.redeem(_idx);
+        vm.stopPrank();
+    }
+
     //测试目的
     //1.小区业绩测试
     //2.奖励分发测试两代
@@ -242,6 +249,99 @@ contract FarmCoreTest is Test{
         assertEq(referralNum, 20);
     }
     
+    //测试目的
+    //1.扣减业绩
+    //2.用户赎回anc到账数据
+    //3.更新2万usdt达标用户地址
+    //4.更新5万usdt达标用户地址
+    function test_redeem() public{
+        address user1 = address(10);
+        address user2 = address(11);
+        address user3 = address(12);
+        address user4 = address(13);
+        address user5 = address(14);
+
+        uint256 amount = 20000e18;
+        test_referral(initialCode, user1);
+        test_referral(initialCode, user2);
+        test_referral(initialCode, user3);
+        test_referral(initialCode, user4);
+        test_referral(initialCode, user5);
+
+        test_stake_utils(user1, amount);
+        test_stake_utils(user2, amount);
+        test_stake_utils(user3, amount);
+        test_stake_utils(user4, amount);
+        test_stake_utils(user5, amount);
+
+        assertEq(80000e18 * 66 / 100, farmReferral.totalAncRankEffectivePerformance());
+        assertEq(80000e18 * 66 / 100, farmReferral.totalUsdtRankEffectivePerformance());
+
+        test_redeem_utils(user1, 0);
+        assertEq(anc.balanceOf(user1), 0);
+        assert(IERC20(USDT).balanceOf(user1) > 10000e18);
+
+        (
+            ,uint256 usdtAward,,
+            uint256 overallPerformance,
+            uint256 effectivePerformance,
+        ) = farmReferral.referralInfo(initialCode); 
+    
+        assertEq(overallPerformance, 80000e18 * 66 / 100);
+        assertEq(effectivePerformance, 60000e18 * 66 / 100);
+        assertEq(usdtAward, 10000e18);
+
+        address[] memory usdtRankAddrs = farmReferral.getUsdtRankAddrs();
+        address[] memory ancRankAddrs = farmReferral.getAncRankAddrs();
+        assertEq(usdtRankAddrs[0], initialCode);
+        assertEq(ancRankAddrs.length, 0);     
+        assertEq(0, farmReferral.totalAncRankEffectivePerformance());
+        assertEq(60000e18 * 66 / 100, farmReferral.totalUsdtRankEffectivePerformance());   
+
+    }
+
+    //收益部分
+    //1.计算anc收益、usdt收益
+    //2.提取anc收益
+    //3.提取usdt收益
+    function test_award() public {
+        test_referral(initialCode, user);
+        test_stake_utils(user, 100e18);
+
+        vm.startPrank(address(anc));
+        farmCore.updateFarm(100e18);
+        vm.stopPrank();
+
+
+        address user1 = address(10);
+        test_referral(initialCode, user1);
+        test_stake_utils(user1, 100e18);
+
+        vm.startPrank(address(anc));
+        farmCore.updateFarm(100e18);
+        vm.stopPrank();
+
+        uint256 cumulateAwardForAncRank = farmCore.cumulateAwardForAncRank();
+        assertEq(cumulateAwardForAncRank, 200e18 * 22 / 100);
+
+        (uint256 userAncAward,) = farmCore.getUserTruthAward(user);
+        (uint256 user1AncAward,) = farmCore.getUserTruthAward(user1);
+        
+        console.log("Anc award for user = 78+39:",userAncAward / 1e18);
+        console.log("Anc award for user1 = 39:", user1AncAward / 1e18);
+
+        vm.startPrank(initialRecipient);
+        anc.transfer(address(farmCore), 200e18);
+        vm.stopPrank();
+
+        vm.startPrank(user);
+        farmCore.claimAnc();
+        vm.stopPrank();
+
+        (uint256 userAncAward0,) = farmCore.getUserTruthAward(user);
+        assertEq(userAncAward0, 0);
+
+    }
     
 }
 

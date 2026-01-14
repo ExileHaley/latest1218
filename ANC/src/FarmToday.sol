@@ -133,4 +133,25 @@ contract FarmToday is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentr
         todayRounds++;
     }
 
+    function getAwardRecords(address user) external view returns(Process.Record[] memory){
+        return awardRecords[user];
+    }
+
+    function getTodayTopInfo() external view returns(Process.Today[] memory infos){
+        address[] memory addrs = todayDirectAddrSets[todayRounds].values();
+        uint256 totalAddrs = addrs.length;
+
+        infos = new Process.Today[](totalAddrs);
+
+        for (uint256 i = 0; i < totalAddrs; i++) {
+            address u = addrs[i];
+            uint256 perf = todayDirectPerformance[u][todayRounds];
+
+            infos[i] = Process.Today({
+                user: u,
+                performance: perf
+            });
+        }
+    }
+
 }

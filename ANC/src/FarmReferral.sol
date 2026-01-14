@@ -82,6 +82,7 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
         referralInfo[user].recommender = recommender;
     }
 
+
     function processStakeReferralInfo(
         address user,
         uint256 amountLiquidity,
@@ -279,5 +280,11 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
     function getAncRankAddrs() external view returns (address[] memory) {
         return ancRankAddrSets.values();
     }
+
+    function getAwardRecords(address user) external view returns(Process.Record[] memory){
+        return awardRecords[user];
+    }
+    
+    
 }
 

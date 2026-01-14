@@ -56,11 +56,13 @@ contract Anc is ERC20, Ownable{
 
     constructor(
         address _initialRecipient, 
+        address _recipient,
         address _community,
         address _buyBack,
         address _USDT
     )ERC20("ANC","ANC")Ownable(msg.sender){
         _mint(_initialRecipient, 1000000000e18);
+        recipient = _recipient;
         community = _community;
         buyBack = _buyBack;
         allowlist[_initialRecipient] = true;

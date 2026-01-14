@@ -69,6 +69,8 @@ contract FarmNode is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         }
     }
 
-
+    function getAwardRecords(address user) external view returns(Process.Record[] memory){
+        return awardRecords[user];
+    }
 
 }

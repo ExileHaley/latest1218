@@ -19,6 +19,7 @@ import {Anc} from "../src/Anc.sol";
 contract FarmCoreTest is Test{
     Anc anc;
     address initialRecipient;
+    address recipient;
     // address _community,
     // address _buyBack,
     // address _USDT
@@ -40,6 +41,7 @@ contract FarmCoreTest is Test{
     address user;
     address owner;
     address uniswapV2Router;
+    
 
     uint256 mainnetFork;
 
@@ -59,10 +61,11 @@ contract FarmCoreTest is Test{
         initialCode = address(5);
         user = address(6);
         owner = address(7);
+        recipient = address(8);
 
         vm.startPrank(owner);
         //部署代币
-        anc = new Anc(initialRecipient, community, buyBack, USDT);
+        anc = new Anc(initialRecipient, recipient, community, buyBack, USDT);
 
         //部署farmNode
         FarmNode farmNodeImpl = new FarmNode();
@@ -300,11 +303,107 @@ contract FarmCoreTest is Test{
 
     }
 
-    //收益部分
-    //1.计算anc收益、usdt收益
-    //2.提取anc收益
-    //3.提取usdt收益
+    //收益部分,计算5万usdt达标anc收益
+    function test_rank_ancAward() public {
+        address user1 = address(10);
+        test_referral(initialCode, user);
+        test_referral(initialCode, user1);
+        uint256 stakeAmount = 80000e18;
+        test_stake_utils(user, stakeAmount);
+        test_stake_utils(user1, stakeAmount);
+
+        (
+            ,,,
+            uint256 overallPerformance,
+            uint256 effectivePerformance,
+        ) = farmReferral.referralInfo(initialCode); 
+
+        assertEq(overallPerformance, stakeAmount * 66 / 100 * 2);
+        assertEq(effectivePerformance, stakeAmount * 66 / 100);
+        assertEq(anc.latestBurnTime(), block.timestamp);
+
+        vm.warp(block.timestamp + 1 days);
+        //10000e18 * 3% * 90% = ancAward * 78%
+        //300 30(wallet) 270 * 给合约
+
+        uint256 totalAmount = anc.balanceOf(anc.pancakePair());
+        uint256 totalIssue = totalAmount * 3 / 100;
+        uint256 toWallet = totalIssue * 10 / 100;
+        uint256 toAward = (totalIssue - toWallet) * 2005 / 10000;
+        uint256 toStaking = toAward * 78 / 100;
+        uint256 toRank = toAward - toStaking;
+        console.log("toRank:", toRank);
+
+        farmCore.issueAncRankAward();
+
+        (uint256 ancAward,) = farmCore.getUserTruthAward(initialCode);
+        console.log("initialCode award anc:",ancAward);
+        vm.startPrank(initialCode);
+        farmCore.claimAnc();
+        vm.stopPrank();
+        (uint256 ancAward0,) = farmCore.getUserTruthAward(initialCode);
+        assert(ancAward0 == 0);
+        
+    }
     
+    //收益部分，质押anc得到的收益
+    function test_staking_ancAward() public {
+        address user1 = address(10);
+        test_referral(initialCode, user);
+        test_referral(initialCode, user1);
+        uint256 stakeAmount = 100e18;
+        test_stake_utils(user, stakeAmount);
+        test_stake_utils(user1, stakeAmount);
+
+        // uint256 totalAmount = anc.balanceOf(anc.pancakePair());
+        // uint256 totalIssue = totalAmount * 3 / 100;
+        // uint256 toWallet = totalIssue * 10 / 100;
+        // uint256 toAward = (totalIssue - toWallet) * 2005 / 10000;
+        // uint256 toStaking = toAward * 78 / 100;
+
+        // uint256 toStakingOneHalf = toStaking / 2;
+
+        vm.warp(block.timestamp + 1 days);
+        farmCore.issueAncRankAward();        
+
+        (uint256 ancAward0,) = farmCore.getUserTruthAward(user);
+        (uint256 ancAward1,) = farmCore.getUserTruthAward(user1);
+        assertEq(ancAward0, ancAward1);
+
+        vm.startPrank(user);
+        farmCore.claimAnc();
+        vm.stopPrank();
+        (uint256 ancAward2,) = farmCore.getUserTruthAward(user);
+        assert(ancAward2 == 0);
+    }
+
+    //收益部分，层级收益层级奖励
+    function test_hierarchy_award_detailed() public {
+        uint256 amountStake = 100e18;
+
+        // 直推 10 个人
+        for (uint i = 0; i < 10; i++) {
+            address u = address(uint160(10 + i));
+            test_referral(initialCode, u);
+            test_stake_utils(u, amountStake);
+        }
+
+        // 下面邀请 20 层
+        address[20] memory addrs;
+        for (uint i = 0; i < 20; i++) {
+            addrs[i] = address(uint160(30 + i));
+            if (i == 0) test_referral(initialCode, addrs[i]);
+            else test_referral(addrs[i - 1], addrs[i]);
+            test_stake_utils(addrs[i], amountStake);
+
+        }
+
+        // 最终奖励
+        (,uint256 usdtAward1,,,,) = farmReferral.referralInfo(initialCode); 
+        assert(usdtAward1 == 124e18);
+    }
+
     
+
 }
 

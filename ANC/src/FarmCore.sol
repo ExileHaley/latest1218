@@ -68,16 +68,21 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
     //英雄榜奖励数据存储
     uint256 public cumulateAwardForTodayTop;
 
-    LiquidityManager public liquidityManager;
-    FarmReferral public farmReferral;
-    FarmNode public farmNode;
-    FarmToday public farmToday;
+    LiquidityManager  liquidityManager;
+    FarmReferral  farmReferral;
+    FarmNode  farmNode;
+    FarmToday  farmToday;
 
     address admin;
     address community; //20%
     address buyBack; //30%
     address USDT;
     address ANC;
+
+    modifier onlyAdmin() {
+        require(admin == msg.sender, "Not permit.");
+        _;
+    }
 
     // Authorize contract upgrades only by the owner
     function _authorizeUpgrade(address newImplementation) internal view override onlyOwner(){}
@@ -110,6 +115,9 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         decimals = 1e10;
     }
 
+    // 添加节点函数
+
+
     function referral(address recommender) external{
         farmReferral.referral(recommender, msg.sender);
         emit Referrals(recommender, msg.sender);
@@ -137,7 +145,7 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         farmReferral.processStakeReferralInfo(msg.sender, toAddLiquidity, amountUsdt);
         farmToday.processTodayTopInfo(recommender, toAddLiquidity);
 
-        u.pendingAnc += (u.stakingUsdt * perStakeUsdtAwardAnc - u.debt) / decimals;
+        u.pendingAnc += u.stakingUsdt * perStakeUsdtAwardAnc - u.debt;
         u.stakingUsdt += toAddLiquidity;
         u.debt = u.stakingUsdt * perStakeUsdtAwardAnc;
         totalStakeValidUsdt += toAddLiquidity;
@@ -171,19 +179,48 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
     }
 
-    function redeem(uint idx) external{
+    function redeem(uint256 idx) external {
         User storage u = userInfo[msg.sender];
         StakingOrder storage order = stakeOrdersBelongUser[msg.sender][idx];
+
         require(!order.withdrawn, "Already redeem.");
         require(order.stakingLiquidity > 0, "Invalid liquidity.");
+
+        // ===== ① 先结算 ANC（关键）=====
+        uint256 pendingFromStake =
+            (u.stakingUsdt * perStakeUsdtAwardAnc - u.debt) / decimals;
+
+        if (pendingFromStake > 0) {
+            u.pendingAnc += pendingFromStake;
+        }
+
+        // ===== ② 再减少 stakingUsdt =====
         u.stakingUsdt -= order.stakingUsdt;
-        liquidityManager.redeemLiquidity(msg.sender, order.stakingTime, order.stakingLiquidity);
+
+        // ===== ③ 同步 debt 到新 stakingUsdt =====
+        u.debt = u.stakingUsdt * perStakeUsdtAwardAnc;
+
+        // 更新全局质押数量
+        totalStakeValidUsdt -= order.stakingUsdt;
+        // ===== ④ 外部逻辑 =====
+        liquidityManager.redeemLiquidity(
+            msg.sender,
+            order.stakingTime,
+            order.stakingLiquidity
+        );
+
         order.withdrawn = true;
-        //更新节点身份
-        if(u.nodeType != Process.NodeType.INVALID) farmNode.removeToNodeAddr(u.nodeType, msg.sender);
-        //更新业绩
-        farmReferral.processRedeemReferralInfo(msg.sender, order.stakingUsdt);
+
+        if (u.nodeType != Process.NodeType.INVALID) {
+            farmNode.removeToNodeAddr(u.nodeType, msg.sender);
+        }
+
+        farmReferral.processRedeemReferralInfo(
+            msg.sender,
+            order.stakingUsdt
+        );
     }
+
 
     function updateFarmUsdt(uint256 amount) external {
         require(msg.sender == ANC, "Not permit.");
@@ -211,18 +248,36 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
     }
 
     //getUserTruthAward + claimUsdt + claimAnc这三个逻辑不连贯
-    function getUserTruthAward(address user) public view returns(uint256 ancAward, uint256 usdtAward){
+    function getUserTruthAward(address user)
+        public
+        view
+        returns (uint256 ancAward, uint256 usdtAward)
+    {
         User memory u = userInfo[user];
-        (, uint256 usdtReferralAward, uint256 ancReferralAward,,,) = farmReferral.referralInfo(user);
+
+        // ===== USDT（你现在是 OK 的）=====
+        (, uint256 usdtReferralAward, uint256 ancReferralAward,,,) =
+            farmReferral.referralInfo(user);
+
         uint256 usdtNodeAward = farmNode.usdtNodeAward(user);
         uint256 usdtTodayAward = farmToday.usdtTodayAward(user);
 
-        uint256 totalUsdt = usdtReferralAward + usdtNodeAward + usdtTodayAward;
-        uint256 totalAnc = u.stakingUsdt * perStakeUsdtAwardAnc / decimals + u.pendingAnc + ancReferralAward;
+        uint256 totalUsdt =
+            usdtReferralAward + usdtNodeAward + usdtTodayAward;
 
-        usdtAward = totalUsdt > u.extractedUsdt ? totalUsdt - u.extractedUsdt : 0;
-        ancAward = totalAnc > u.extractedAnc ? totalAnc - u.extractedAnc : 0;
+        usdtAward = totalUsdt - u.extractedUsdt;
+
+        // ===== ANC（关键修正）=====
+        uint256 pendingFromStake =
+            (u.stakingUsdt * perStakeUsdtAwardAnc - u.debt) / decimals;
+
+        ancAward =
+            u.pendingAnc
+            + pendingFromStake
+            + ancReferralAward
+            - u.extractedAnc;
     }
+
 
     function claimUsdt() external nonReentrant {
         (, uint256 usdtAward) = getUserTruthAward(msg.sender);
@@ -237,7 +292,9 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         require(ancAward > 0, "No ANC reward");
 
         User storage u = userInfo[msg.sender];
-        u.extractedAnc += ancAward;
+        (,, uint256 ancReferralAward,,,) = farmReferral.referralInfo(msg.sender);
+        u.extractedAnc += ancReferralAward;
+
         u.pendingAnc = 0;
         u.debt = u.stakingUsdt * perStakeUsdtAwardAnc;
 
@@ -284,5 +341,81 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         farmNode.issueNodeAward(nodeTypes, amounts);
     }
 
+    function getAwardRecord(address user) external view returns(
+        Process.Record[] memory node,
+        Process.Record[] memory today,
+        Process.Record[] memory invite
+    ){
+        node = farmNode.getAwardRecords(user);
+        today = farmNode.getAwardRecords(user);
+        invite = farmReferral.getAwardRecords(user);
+    }
+
+    // 获取直推地址信息
+    function getDirectReferralAddrInfo(address user) external view returns(Process.Info[] memory infos) {
+        address[] memory directs = farmReferral.getDirectReferralAddrs(user);
+        infos = new Process.Info[](directs.length);
+
+        for (uint i = 0; i < directs.length; i++) {
+            address directAddr = directs[i];
+
+            // 从 FarmCore 获取 stakingUsdt
+            User memory u = userInfo[directAddr];
+
+            // 从 FarmReferral 获取 overall 和 effective
+            (, , , uint256 overallPerformance, uint256 effectivePerformance, ) = farmReferral.referralInfo(directAddr);
+
+            infos[i] = Process.Info({
+                user: directAddr,
+                stakingUsdt: u.stakingUsdt,
+                overall: overallPerformance,
+                effective: effectivePerformance
+            });
+        }
+    }
+
+
+    function getUserInfo(address user) external view returns(
+        Process.NodeType nodeType,
+        uint256 stakingUsdt,
+        StakingOrder[] memory orders,
+        address recommender,
+        uint256 overallPerformance,
+        uint256 effectivePerformance,
+        uint256 referralNum,
+        uint256 ancAward,
+        uint256 usdtAward
+    ){
+        (
+            recommender,,,
+            overallPerformance,
+            effectivePerformance,
+            referralNum
+        ) = farmReferral.referralInfo(user);
+
+        User memory u = userInfo[user];
+        nodeType = u.nodeType;
+        stakingUsdt = u.stakingUsdt;
+        orders = stakeOrdersBelongUser[user];
+
+        (ancAward, usdtAward) = getUserTruthAward(user);
+    }
+    
+    function getTodayTopInfo() external view returns(Process.Today[] memory){
+        return farmToday.getTodayTopInfo();
+    }
+
+    function getRankAddr() external view returns(address[] memory rankAnc, address[] memory usdtRank){
+        rankAnc = farmReferral.getAncRankAddrs();
+        usdtRank = farmReferral.getUsdtRankAddrs();
+    }
+
+    function getInitialCode() external view returns(address){
+        return farmReferral.initialCode();
+    }
+
+    function eligibilityCode(address user) external view returns(bool){
+        return userInfo[user].stakingUsdt > 0;
+    }
 
 }

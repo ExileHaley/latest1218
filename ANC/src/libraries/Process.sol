@@ -9,4 +9,16 @@ library Process {
         uint256 amount;
         uint256 time;
     }
+
+    struct Info{
+        address user;
+        uint256 stakingUsdt;
+        uint256 overall;
+        uint256 effective;
+    }
+    
+    struct Today{
+        address user;
+        uint256 performance;
+    }
 }

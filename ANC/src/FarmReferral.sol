@@ -285,6 +285,9 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
         return awardRecords[user];
     }
     
-    
+    function getBelongToRank(address user) external view returns(bool isRankAnc, bool isRankUsdt){
+        isRankAnc = ancRankAddrSets.contains(user);
+        isRankUsdt = usdtRankAddrSets.contains(user);
+    }
 }
 

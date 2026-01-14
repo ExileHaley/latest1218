@@ -384,7 +384,9 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         uint256 effectivePerformance,
         uint256 referralNum,
         uint256 ancAward,
-        uint256 usdtAward
+        uint256 usdtAward,
+        bool isRankAnc, 
+        bool isRankUsdt
     ){
         (
             recommender,,,
@@ -399,15 +401,11 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         orders = stakeOrdersBelongUser[user];
 
         (ancAward, usdtAward) = getUserTruthAward(user);
+        (isRankAnc, isRankUsdt) = farmReferral.getBelongToRank(user);
     }
     
     function getTodayTopInfo() external view returns(Process.Today[] memory){
         return farmToday.getTodayTopInfo();
-    }
-
-    function getRankAddr() external view returns(address[] memory rankAnc, address[] memory usdtRank){
-        rankAnc = farmReferral.getAncRankAddrs();
-        usdtRank = farmReferral.getUsdtRankAddrs();
     }
 
     function getInitialCode() external view returns(address){

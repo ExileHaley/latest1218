@@ -38,3 +38,89 @@ $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --b
 - 管理每日直推地址和当日 top6 逻辑
 - 提供方法计算每日 top6 奖励并发放
 - 提供接口供 FarmCore 更新每日业绩
+
+#### USDT测试代币;
+#### ANC 代币:
+#### farmCore:
+#### farmReferral:
+#### farmNode:
+#### farmToday:
+
+### farmCore func list:
+```solidity
+//获取首码地址
+function getInitialCode() external view returns(address);
+//判断当前地址是否有邀请资格
+function eligibilityCode(address user) external view returns(bool);
+//邀请recommender，参数是邀请人地址
+function referral(address recommender) external;
+//质押，amountUsdt是usdt的数量，100个usdt起步
+function stake(uint256 amountUsdt) external;
+//无效0，小节点1、中节点2、大节点3
+enum NodeType { INVALID, SMALL, MEDIUM, LARGE }
+//订单
+struct StakingOrder{
+    uint256 stakingUsdt;        //质押的usdt数量
+    uint256 stakingLiquidity;   //质押usdt产生的流动性代币数量
+    uint256 stakingTime;        //质押时间
+    bool    withdrawn;          //当前订单是否已经赎回
+}
+//获取用户信息
+function getUserInfo(address user) external view returns(
+    Process.NodeType nodeType,  //节点类型
+    uint256 stakingUsdt,        //所有订单总共质押的usdt数量
+    StakingOrder[] memory orders,//当前用户的订单列表
+    address recommender,        //当前用户的邀请人地址
+    uint256 overallPerformance, //当前用户的总业绩
+    uint256 effectivePerformance,//当前用户的小区业绩
+    uint256 referralNum,         //当前用户的邀请总人数，伞下总人数
+    uint256 ancAward,           //当前用户可提取的anc收益，可提取
+    uint256 usdtAward           //当前用户可提取的usdt数量，可提取
+);
+function getUserOtherInfo(address user) external view returns(
+    uint256 todayAward,     //如果英雄榜改地址得到了usdt奖励，只展示
+    uint256 nodeAward,      //如果是节点，则会产生node usdt奖励，只展示
+    uint256 referralAward,  //邀请层级奖励+2万usdt小区业绩达标的奖励，只展示
+    bool isRankAnc,         //是否达到2万usdt小区业绩，参与该项usdt奖励，做个标识
+    bool isRankUsdt         //是否达到5万usdt小区业绩，参与该项anc奖励，做个标识
+);
+//无效0，usdt1，anc2
+enum Token {INVALID, USDT_TOKEN, ANC_TOKEN}
+struct Record {
+    Token token;    //代币奖励种类
+    address from;   //奖励来源地址
+    uint256 amount; //奖励数量
+    uint256 time;   //奖励时间
+}
+//获取不同类型的奖励记录，都要展示
+function getAwardRecord(address user) external view returns(
+    Process.Record[] memory node,   //节点奖励的记录
+    Process.Record[] memory today,  //英雄榜奖励的记录
+    Process.Record[] memory invite  //邀请奖励的记录
+);
+//直推用户信息
+struct Info{
+    address user;   //地址
+    uint256 stakingUsdt;//质押的usdt数量
+    uint256 overall;    //伞下总业绩
+    uint256 effective;  //伞下小区业绩
+}
+//获取直推地址的信息，这里直推人数通过这个数组长度获取一下
+function getDirectReferralAddrInfo(address user) external view returns(Process.Info[] memory infos);
+//英雄榜信息
+struct Today{
+    address user;   //地址
+    uint256 performance;    //当日邀请业绩
+}
+//获取今日英雄榜的参与者以及业绩
+function getTodayTopInfo() external view returns(Process.Today[] memory);
+//提取usdt收益
+function claimUsdt() external;
+//提取anc收益
+function claimAnc() external;
+//赎回，
+//getUserInfo里StakingOrder[] memory orders,//当前用户的订单列表，
+//这里idx是数组的下标
+function redeem(uint256 idx) external;
+
+```

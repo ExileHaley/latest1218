@@ -13,6 +13,7 @@ import {FarmNode} from "../src/FarmNode.sol";
 import {FarmReferral} from "../src/FarmReferral.sol";
 import {FarmToday} from "../src/FarmToday.sol";
 import {LiquidityManager} from "../src/LiquidityManager.sol";
+import {Process} from "../src/libraries/Process.sol";
 
 import {Anc} from "../src/Anc.sol";
 
@@ -403,7 +404,38 @@ contract FarmCoreTest is Test{
         assert(usdtAward1 == 124e18);
     }
 
-    
+    //测试管理员方法
+    function test_add_node_forAdmin() public {
+        test_referral(initialCode, user);
+        address[] memory users = new address[](1);
+        users[0] = user;
+        vm.startPrank(admin);
+        farmCore.addNodeForAdmin(Process.NodeType.SMALL, users, 100e18);
+        vm.stopPrank();
+        uint256 totalStake = farmCore.totalStakeValidUsdt();
+        assertEq(totalStake, farmCore.nodePrice(Process.NodeType.SMALL) * 66 / 100);
+
+ 
+        (Process.NodeType nodeType, uint256 stakingUsdt,,,,) = farmCore.userInfo(user);
+        assert(nodeType == Process.NodeType.SMALL);
+        assert(totalStake == stakingUsdt);
+
+        address[] memory nodeAddrs = farmNode.getNodeAddrs(Process.NodeType.SMALL);
+        assert(nodeAddrs[0] == user);
+
+        (
+            ,
+            uint256 usdtReferralAward,,
+            uint256 overallPerformance,
+            uint256 effectivePerformance,
+            uint256 referralNum
+        ) = farmReferral.referralInfo(initialCode);
+
+        assertEq(usdtReferralAward, 0);
+        assert(overallPerformance == totalStake);
+        assertEq(effectivePerformance, 0);
+        assert(referralNum == 1);
+    }
 
 }
 

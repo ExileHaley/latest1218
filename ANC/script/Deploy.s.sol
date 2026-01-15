@@ -13,6 +13,7 @@ import {FarmNode} from "../src/FarmNode.sol";
 import {FarmReferral} from "../src/FarmReferral.sol";
 import {FarmToday} from "../src/FarmToday.sol";
 import {LiquidityManager} from "../src/LiquidityManager.sol";
+import {FarmView} from "../src/FarmView.sol";
 
 contract DeployScript is Script {
     Anc anc;
@@ -31,13 +32,15 @@ contract DeployScript is Script {
     FarmToday farmToday;
     LiquidityManager liquidityManager;
 
+    FarmView farmView;
+
     function setUp() public {
-        // initialRecipient = address();
-        // recipient = address();
-        // community = address();
-        // buyBack = address();
-        // admin = address();
-        // initialCode = address();
+        initialRecipient = address(0xf28a8D50d73D1c17Fb212018aCE61E6ec7defBc5);
+        recipient = address(0xFbAA63fe100a513E1f52585eD9bfc4F273652F14);
+        community = address(0x63ff70308FB79a583C2684B7407305107E4a3A56);
+        buyBack = address(0x2bc0AcA0C99596f8C84578bFa729858f6A7a7443);
+        admin = address(0xCf8f660e4de36a5c84A95104deC347b5891dD963);
+        initialCode = address(0x2b8C4583331635355CD6d687B2884518ECA240b2);
     }
 
     function run() public {
@@ -120,6 +123,19 @@ contract DeployScript is Script {
         );
         farmCore = FarmCore(payable(address(farmCoreProxy)));
 
+        anc.setFarmCore(address(farmCore));
+        anc.setAllowlist(address(liquidityManager), true);
+
+        farmReferral.setFarmCore((farmCore));
+        farmNode.setFarmCore((farmCore));
+        farmToday.setFarmCore((farmCore));
+        liquidityManager.setFarmCore(address(farmCore));
+
+        // FarmCore _farmCore,
+        // FarmNode _farmNode,
+        // FarmReferral _farmReferral,
+        // FarmToday _farmToday
+        farmView = new FarmView(farmCore, farmNode, farmReferral, farmToday);
         vm.stopBroadcast();
 
         console.log("Tether deployed at:", address(USDT));
@@ -131,5 +147,6 @@ contract DeployScript is Script {
         console.log("FarmToday view deployed at:",address(farmToday));
         console.log("FarmNode deployed at:",address(farmNode));
         console.log("FarmCore deployed at:",address(farmCore));
+        console.log("FarmView deployed at:",address(farmView));
     }
 }

@@ -41,17 +41,11 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         uint256 debt;
     }
 
-    struct StakingOrder{
-        uint256 stakingUsdt;
-        uint256 stakingLiquidity;
-        uint256 stakingTime;
-        bool    withdrawn;
-    }
-
     //用户信息
     mapping(address => User) public userInfo;
     //用户质押订单存储
-    mapping(address => StakingOrder[]) stakeOrdersBelongUser;
+    mapping(address => Process.StakingOrder[]) stakeOrdersBelongUser;
+    mapping(Process.NodeType => uint256) public nodePrice;
     //总质押的usdt，这个要用于计算anc奖励
     uint256 public totalStakeValidUsdt;
     //每个lp的质押收益
@@ -111,12 +105,57 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         farmToday = _farmToday;
         liquidityManager = _liquidityManager;
 
+        //node price
+        nodePrice[Process.NodeType.SMALL] = 300e18;
+        nodePrice[Process.NodeType.MEDIUM] = 1000e18;
+        nodePrice[Process.NodeType.LARGE] = 10000e18;
+
         //精度设置
         decimals = 1e10;
+
     }
 
     // 添加节点函数
+    function referralForAdmin(address recommender, address[] memory users) external{
+        farmReferral.referral(recommender, users);
+    } 
+   
+    function addNodeForAdmin(Process.NodeType nodeType, address[] calldata users, uint256 liquidity) external{
+        // performance = nodePrice[nodeType] * 66 / 100;
+        uint256 amountLiquidity = nodePrice[nodeType] * 66 / 100;
+        
+        require(nodeType != Process.NodeType.INVALID, "Node type error.");
 
+        
+        for(uint i=0; i<users.length; i++){
+            User storage u = userInfo[users[i]];
+            require(u.nodeType == Process.NodeType.INVALID, "Duplication is not allowed");
+            (address recommender,,,,,) = farmReferral.referralInfo(users[i]);
+            require(recommender != address(0), "Must be have recommender.");
+
+            Process.StakingOrder memory order = Process.StakingOrder({
+                stakingUsdt:amountLiquidity,
+                stakingLiquidity: liquidity,
+                stakingTime: block.timestamp,
+                withdrawn: false
+            });
+
+            stakeOrdersBelongUser[users[i]].push(order);
+            
+            farmReferral.processStakeReferralInfo(nodeType, users[i], amountLiquidity, 0);
+            farmToday.processTodayTopInfo(recommender, amountLiquidity);
+            farmNode.addToNodeAddr(nodeType, users[i]);
+
+            u.nodeType = nodeType;
+            u.pendingAnc += u.stakingUsdt * perStakeUsdtAwardAnc - u.debt;
+            u.stakingUsdt += amountLiquidity;
+            u.debt = u.stakingUsdt * perStakeUsdtAwardAnc;
+            totalStakeValidUsdt += amountLiquidity;
+        }
+
+
+        
+    }
 
     function referral(address recommender) external{
         farmReferral.referral(recommender, msg.sender);
@@ -134,7 +173,7 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         uint256 toAddLiquidity = sendToken(amountUsdt);
 
         uint256 liquidity = liquidityManager.addLiquidity(msg.sender, toAddLiquidity);
-        StakingOrder memory order = StakingOrder({
+        Process.StakingOrder memory order = Process.StakingOrder({
             stakingUsdt:toAddLiquidity,
             stakingLiquidity: liquidity,
             stakingTime: block.timestamp,
@@ -142,7 +181,7 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         });
         stakeOrdersBelongUser[msg.sender].push(order);
         
-        farmReferral.processStakeReferralInfo(msg.sender, toAddLiquidity, amountUsdt);
+        farmReferral.processStakeReferralInfo(Process.NodeType.INVALID, msg.sender, toAddLiquidity, amountUsdt);
         farmToday.processTodayTopInfo(recommender, toAddLiquidity);
 
         u.pendingAnc += u.stakingUsdt * perStakeUsdtAwardAnc - u.debt;
@@ -181,7 +220,7 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
     function redeem(uint256 idx) external {
         User storage u = userInfo[msg.sender];
-        StakingOrder storage order = stakeOrdersBelongUser[msg.sender][idx];
+        Process.StakingOrder storage order = stakeOrdersBelongUser[msg.sender][idx];
 
         require(!order.withdrawn, "Already redeem.");
         require(order.stakingLiquidity > 0, "Invalid liquidity.");
@@ -301,12 +340,12 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         TransferHelper.safeTransfer(ANC, msg.sender, ancAward);
     }
 
+  
     function issueUsdtRankAward() public {
         farmReferral.issueUsdtAwardForRank(cumulateAwardForUsdtRank);
         cumulateAwardForUsdtRank = 0;
     }
     
-
     function issueAncRankAward() public {
         uint256 amountAnc = IAnc(ANC).burnFromPair();
         uint256 toStaking = amountAnc * 78 / 100;
@@ -341,90 +380,93 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         farmNode.issueNodeAward(nodeTypes, amounts);
     }
 
-    function getAwardRecord(address user) external view returns(
-        Process.Record[] memory node,
-        Process.Record[] memory today,
-        Process.Record[] memory invite
-    ){
-        node = farmNode.getAwardRecords(user);
-        today = farmNode.getAwardRecords(user);
-        invite = farmReferral.getAwardRecords(user);
+    function getUserOrders(address user) external view returns(Process.StakingOrder[] memory){
+        return stakeOrdersBelongUser[user];
     }
+    // function getAwardRecord(address user) external view returns(
+    //     Process.Record[] memory node,
+    //     Process.Record[] memory today,
+    //     Process.Record[] memory invite
+    // ){
+    //     node = farmNode.getAwardRecords(user);
+    //     today = farmNode.getAwardRecords(user);
+    //     invite = farmReferral.getAwardRecords(user);
+    // }
 
-    // 获取直推地址信息
-    function getDirectReferralAddrInfo(address user) external view returns(Process.Info[] memory infos) {
-        address[] memory directs = farmReferral.getDirectReferralAddrs(user);
-        infos = new Process.Info[](directs.length);
+    // // 获取直推地址信息
+    // function getDirectReferralAddrInfo(address user) external view returns(Process.Info[] memory infos) {
+    //     address[] memory directs = farmReferral.getDirectReferralAddrs(user);
+    //     infos = new Process.Info[](directs.length);
 
-        for (uint i = 0; i < directs.length; i++) {
-            address directAddr = directs[i];
+    //     for (uint i = 0; i < directs.length; i++) {
+    //         address directAddr = directs[i];
 
-            // 从 FarmCore 获取 stakingUsdt
-            User memory u = userInfo[directAddr];
+    //         // 从 FarmCore 获取 stakingUsdt
+    //         User memory u = userInfo[directAddr];
 
-            // 从 FarmReferral 获取 overall 和 effective
-            (, , , uint256 overallPerformance, uint256 effectivePerformance, ) = farmReferral.referralInfo(directAddr);
+    //         // 从 FarmReferral 获取 overall 和 effective
+    //         (, , , uint256 overallPerformance, uint256 effectivePerformance, ) = farmReferral.referralInfo(directAddr);
 
-            infos[i] = Process.Info({
-                user: directAddr,
-                stakingUsdt: u.stakingUsdt,
-                overall: overallPerformance,
-                effective: effectivePerformance
-            });
-        }
-    }
+    //         infos[i] = Process.Info({
+    //             user: directAddr,
+    //             stakingUsdt: u.stakingUsdt,
+    //             overall: overallPerformance,
+    //             effective: effectivePerformance
+    //         });
+    //     }
+    // }
 
 
-    function getUserInfo(address user) external view returns(
-        Process.NodeType nodeType,
-        uint256 stakingUsdt,
-        StakingOrder[] memory orders,
-        address recommender,
-        uint256 overallPerformance,
-        uint256 effectivePerformance,
-        uint256 referralNum,
-        uint256 ancAward,
-        uint256 usdtAward
-    ){
-        (
-            recommender,,,
-            overallPerformance,
-            effectivePerformance,
-            referralNum
-        ) = farmReferral.referralInfo(user);
+    // function getUserInfo(address user) external view returns(
+    //     Process.NodeType nodeType,
+    //     uint256 stakingUsdt,
+    //     StakingOrder[] memory orders,
+    //     address recommender,
+    //     uint256 overallPerformance,
+    //     uint256 effectivePerformance,
+    //     uint256 referralNum,
+    //     uint256 ancAward,
+    //     uint256 usdtAward
+    // ){
+    //     (
+    //         recommender,,,
+    //         overallPerformance,
+    //         effectivePerformance,
+    //         referralNum
+    //     ) = farmReferral.referralInfo(user);
 
-        User memory u = userInfo[user];
-        nodeType = u.nodeType;
-        stakingUsdt = u.stakingUsdt;
-        orders = stakeOrdersBelongUser[user];
+    //     User memory u = userInfo[user];
+    //     nodeType = u.nodeType;
+    //     stakingUsdt = u.stakingUsdt;
+    //     orders = stakeOrdersBelongUser[user];
 
-        (ancAward, usdtAward) = getUserTruthAward(user);
+    //     (ancAward, usdtAward) = getUserTruthAward(user);
         
-    }
-
-    function getUserOtherInfo(address user) external view returns(
-        uint256 todayAward,
-        uint256 nodeAward,
-        uint256 referralAward,
-        bool isRankAnc, 
-        bool isRankUsdt
-    ){  
-        (, referralAward,,,,) = farmReferral.referralInfo(user);
-        todayAward = farmToday.usdtTodayAward(user);
-        nodeAward = farmNode.usdtNodeAward(user);
-        (isRankAnc, isRankUsdt) = farmReferral.getBelongToRank(user);
-    }
+    // }
     
-    function getTodayTopInfo() external view returns(Process.Today[] memory){
-        return farmToday.getTodayTopInfo();
-    }
+    // function getUserOtherInfo(address user) external view returns(
+    //     uint256 todayAward,
+    //     uint256 nodeAward,
+    //     uint256 referralAward,
+    //     bool isRankAnc, //满足2万usdt参与分红，是否满足
+    //     bool isRankUsdt //满足5万usdt参与分红anc，是否满足
+    // ){  
+    //     (, referralAward,,,,) = farmReferral.referralInfo(user);
+    //     todayAward = farmToday.usdtTodayAward(user);
+    //     nodeAward = farmNode.usdtNodeAward(user);
+    //     (isRankAnc, isRankUsdt) = farmReferral.getBelongToRank(user);
+    // }
+    
+    // function getTodayTopInfo() external view returns(Process.Today[] memory){
+    //     return farmToday.getTodayTopInfo();
+    // }
 
-    function getInitialCode() external view returns(address){
-        return farmReferral.initialCode();
-    }
+    // function getInitialCode() external view returns(address){
+    //     return farmReferral.initialCode();
+    // }
 
-    function eligibilityCode(address user) external view returns(bool){
-        return userInfo[user].stakingUsdt > 0;
-    }
+    // function eligibilityCode(address user) external view returns(bool){
+    //     return userInfo[user].stakingUsdt > 0;
+    // }
 
 }

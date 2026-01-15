@@ -21,4 +21,11 @@ library Process {
         address user;
         uint256 performance;
     }
+
+    struct StakingOrder{
+        uint256 stakingUsdt;
+        uint256 stakingLiquidity;
+        uint256 stakingTime;
+        bool    withdrawn;
+    }
 }

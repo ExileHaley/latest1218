@@ -64,6 +64,25 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
         return referralInfo[user].recommender;
     }
 
+    function referral(address recommender, address[] calldata users) external onlyCore{
+        if (recommender != initialCode) {
+            require(
+                referralInfo[recommender].recommender != address(0),"RECOMMENDATION_IS_REQUIRED_REFERRAL"
+            );
+        }
+
+        for(uint i=0; i<users.length; i++){
+            // user != recommender;
+            // user != initialCode;
+            // user.recommender == address(0)
+            if(users[i] != recommender && users[i] != initialCode){
+                Referral storage r = referralInfo[users[i]];
+
+                if(r.recommender == address(0)) r.recommender = recommender;
+            }
+        }
+    }
+
     function referral(address recommender, address user) external onlyCore nonReentrant {
         require(user != initialCode, "Invalid sender");
 
@@ -84,10 +103,12 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
 
 
     function processStakeReferralInfo(
+        Process.NodeType nodeType,
         address user,
         uint256 amountLiquidity,
         uint256 amountUsdt
     ) external onlyCore {
+
         address current = referralInfo[user].recommender;
         uint8 level = 1;
         uint256 num = 0;
@@ -106,24 +127,27 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
 
             _updateEffectiveAndRank(current);
 
-            uint256 directCount = directReferralAddrSets[current].length();
-            uint8 maxLevel = directCount > 9 ? 20 : uint8(directCount);
+            
+            if(nodeType == Process.NodeType.INVALID){
+                uint256 directCount = directReferralAddrSets[current].length();
+                uint8 maxLevel = directCount > 9 ? 20 : uint8(directCount);
 
-            if (level <= maxLevel && amountUsdt > 0) {
-                uint256 reward = amountUsdt * levelPercents[level - 1] / 10000;
-                if (reward > 0) {
-                    r.usdtReferralAward += reward;
-                    awardRecords[current].push(
-                        Process.Record({
-                            token: Process.Token.USDT_TOKEN,
-                            from: user,
-                            amount: reward,
-                            time: block.timestamp
-                        })
-                    );
+                if (level <= maxLevel && amountUsdt > 0) {
+                    uint256 reward = amountUsdt * levelPercents[level - 1] / 10000;
+                    if (reward > 0) {
+                        r.usdtReferralAward += reward;
+                        awardRecords[current].push(
+                            Process.Record({
+                                token: Process.Token.USDT_TOKEN,
+                                from: user,
+                                amount: reward,
+                                time: block.timestamp
+                            })
+                        );
+                    }
                 }
             }
-
+            
             current = r.recommender;
             level++;
         }

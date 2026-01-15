@@ -38,6 +38,8 @@ $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --b
 - 管理每日直推地址和当日 top6 逻辑
 - 提供方法计算每日 top6 奖励并发放
 - 提供接口供 FarmCore 更新每日业绩
+
+  
 ==================================================================================================
 #### USDT测试代币;0xc0Ac74c92e1ce9100316156cf80b3809d63Be4dA
 #### ANC 代币:0x73587A63886CCAA7D59E3Dc53EA2272fab85253A

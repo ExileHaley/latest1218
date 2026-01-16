@@ -62,16 +62,17 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
     //英雄榜奖励数据存储
     uint256 public cumulateAwardForTodayTop;
 
-    LiquidityManager  liquidityManager;
-    FarmReferral  farmReferral;
-    FarmNode  farmNode;
-    FarmToday  farmToday;
+    
 
     address admin;
     address community; //20%
     address buyBack; //30%
     address USDT;
     address ANC;
+    LiquidityManager  liquidityManager;
+    FarmReferral  farmReferral;
+    FarmNode  farmNode;
+    FarmToday  farmToday;
 
     modifier onlyAdmin() {
         require(admin == msg.sender, "Not permit.");
@@ -115,12 +116,26 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
     }
 
+    // | 百分比 | Solidity    |
+    // | ----- | ----------- |
+    // | 1%    | `1e16`      |
+    // | 5%    | `5e16`      |
+    // | 10%   | `1e17`      |
+    // | 20%   | `2e17`      |
+    // | 50%   | `5e17`      |
+    // | 100%  | `1e18`      |
+
+    function setLimintDown(uint256 _limitDown) external onlyAdmin{
+        require(_limitDown <= 10, "limit down error.");
+        liquidityManager.setLimitDown(_limitDown);
+    }
+
     // 添加节点函数
-    function referralForAdmin(address recommender, address[] memory users) external{
+    function referralForAdmin(address recommender, address[] memory users) external onlyAdmin{
         farmReferral.referral(recommender, users);
     } 
    
-    function addNodeForAdmin(Process.NodeType nodeType, address[] calldata users, uint256 liquidity) external{
+    function addNodeForAdmin(Process.NodeType nodeType, address[] calldata users, uint256 liquidity) external onlyAdmin{
         // performance = nodePrice[nodeType] * 66 / 100;
         uint256 amountLiquidity = nodePrice[nodeType] * 66 / 100;
         
@@ -369,6 +384,7 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
     }
 
     function issueOtherNodeAward() public {
+
         Process.NodeType[] memory nodeTypes = new Process.NodeType[](2);
         nodeTypes[0] = Process.NodeType.MEDIUM;
         nodeTypes[1] = Process.NodeType.LARGE;
@@ -380,93 +396,15 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         farmNode.issueNodeAward(nodeTypes, amounts);
     }
 
+    function buyDown(address from) external {
+        liquidityManager.exchange(from);
+    }   
+
     function getUserOrders(address user) external view returns(Process.StakingOrder[] memory){
         return stakeOrdersBelongUser[user];
     }
-    // function getAwardRecord(address user) external view returns(
-    //     Process.Record[] memory node,
-    //     Process.Record[] memory today,
-    //     Process.Record[] memory invite
-    // ){
-    //     node = farmNode.getAwardRecords(user);
-    //     today = farmNode.getAwardRecords(user);
-    //     invite = farmReferral.getAwardRecords(user);
-    // }
-
-    // // 获取直推地址信息
-    // function getDirectReferralAddrInfo(address user) external view returns(Process.Info[] memory infos) {
-    //     address[] memory directs = farmReferral.getDirectReferralAddrs(user);
-    //     infos = new Process.Info[](directs.length);
-
-    //     for (uint i = 0; i < directs.length; i++) {
-    //         address directAddr = directs[i];
-
-    //         // 从 FarmCore 获取 stakingUsdt
-    //         User memory u = userInfo[directAddr];
-
-    //         // 从 FarmReferral 获取 overall 和 effective
-    //         (, , , uint256 overallPerformance, uint256 effectivePerformance, ) = farmReferral.referralInfo(directAddr);
-
-    //         infos[i] = Process.Info({
-    //             user: directAddr,
-    //             stakingUsdt: u.stakingUsdt,
-    //             overall: overallPerformance,
-    //             effective: effectivePerformance
-    //         });
-    //     }
-    // }
-
-
-    // function getUserInfo(address user) external view returns(
-    //     Process.NodeType nodeType,
-    //     uint256 stakingUsdt,
-    //     StakingOrder[] memory orders,
-    //     address recommender,
-    //     uint256 overallPerformance,
-    //     uint256 effectivePerformance,
-    //     uint256 referralNum,
-    //     uint256 ancAward,
-    //     uint256 usdtAward
-    // ){
-    //     (
-    //         recommender,,,
-    //         overallPerformance,
-    //         effectivePerformance,
-    //         referralNum
-    //     ) = farmReferral.referralInfo(user);
-
-    //     User memory u = userInfo[user];
-    //     nodeType = u.nodeType;
-    //     stakingUsdt = u.stakingUsdt;
-    //     orders = stakeOrdersBelongUser[user];
-
-    //     (ancAward, usdtAward) = getUserTruthAward(user);
-        
-    // }
     
-    // function getUserOtherInfo(address user) external view returns(
-    //     uint256 todayAward,
-    //     uint256 nodeAward,
-    //     uint256 referralAward,
-    //     bool isRankAnc, //满足2万usdt参与分红，是否满足
-    //     bool isRankUsdt //满足5万usdt参与分红anc，是否满足
-    // ){  
-    //     (, referralAward,,,,) = farmReferral.referralInfo(user);
-    //     todayAward = farmToday.usdtTodayAward(user);
-    //     nodeAward = farmNode.usdtNodeAward(user);
-    //     (isRankAnc, isRankUsdt) = farmReferral.getBelongToRank(user);
-    // }
-    
-    // function getTodayTopInfo() external view returns(Process.Today[] memory){
-    //     return farmToday.getTodayTopInfo();
-    // }
-
-    // function getInitialCode() external view returns(address){
-    //     return farmReferral.initialCode();
-    // }
-
-    // function eligibilityCode(address user) external view returns(bool){
-    //     return userInfo[user].stakingUsdt > 0;
-    // }
-
+    function isProceed() external view returns(bool){
+        return liquidityManager.isLimitDownTriggered();
+    } 
 }

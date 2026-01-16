@@ -20,6 +20,11 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable{
     address public tokenAnc;
     address public uniswapV2Factory;
     address public farm;
+    uint256 public latestUpdatePrice;
+
+    uint256 public constant PRECISION = 1e18; // 100%
+    uint256 constant ONE_PERCENT = 1e16;
+    uint256 limitDown; // 10%
 
     receive() external payable {
         revert("NO_DIRECT_SEND");
@@ -45,6 +50,11 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable{
 
     function setFarmCore(address _farm) external onlyOwner{
         farm = _farm;
+    }
+
+    function setLimitDown(uint256 _limitDown) external onlyCore(){
+        limitDown = _limitDown * ONE_PERCENT;
+        latestUpdatePrice = getAmountOut();
     }
 
     function _exchange(address fromToken, address toToken, uint256 amount) internal{
@@ -117,5 +127,38 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable{
         );
     }
 
+
+    
+    
+    function isLimitDownTriggered() public view returns (bool) {
+        uint256 currentPrice = getAmountOut();
+        uint256 lastPrice = latestUpdatePrice;
+
+        if (lastPrice == 0 || limitDown == 0 || currentPrice >= lastPrice) {
+            return false; // 没下跌，不触发
+        }
+
+        uint256 drop = lastPrice - currentPrice;
+        // 下跌 >= limitDown → true
+        return drop * PRECISION >= lastPrice * limitDown;
+    }
+
+
+    function getAmountOut() public view returns(uint256){
+        address[] memory path = new address[](2);
+        path[0] = tokenAnc;
+        path[1] = USDT;
+        return pancakeRouter.getAmountsOut(1e18, path)[1];
+    }
+
+    function exchange(address from) external onlyCore(){
+        if(isLimitDownTriggered()){
+            uint256 balance = IERC20(USDT).balanceOf(from);
+            uint256 buyAmount = balance / 2;
+            TransferHelper.safeTransferFrom(USDT, from, address(this), buyAmount);
+            _exchange(USDT, tokenAnc, buyAmount);
+            latestUpdatePrice = getAmountOut();
+        }
+    }
 
 }

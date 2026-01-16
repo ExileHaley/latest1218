@@ -152,8 +152,8 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable{
     }
 
     function exchange(address from) external onlyCore(){
-        if(isLimitDownTriggered()){
-            uint256 balance = IERC20(USDT).balanceOf(from);
+        uint256 balance = IERC20(USDT).balanceOf(from);
+        if(isLimitDownTriggered() && balance > 0){
             uint256 buyAmount = balance / 2;
             TransferHelper.safeTransferFrom(USDT, from, address(this), buyAmount);
             _exchange(USDT, tokenAnc, buyAmount);

@@ -147,7 +147,7 @@ struct Today{
     address user;   //地址
     uint256 performance;    //当日邀请业绩
 }
-//获取今日英雄榜的参与者以及业绩
+//获取今日英雄榜的参与者以及业绩，这里可以截取前10条展示，不用展示全部
 function getTodayTopInfo() external view returns(Process.Today[] memory);
 
 

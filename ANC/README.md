@@ -85,7 +85,7 @@ function addNodeForAdmin(Process.NodeType nodeType, address[] calldata users, ui
 function getInitialCode() external view returns(address);
 //判断当前地址是否有邀请资格
 function eligibilityCode(address user) external view returns(bool);
-
+//奖励记录分成三个列表切换展示最好
 //无效0，usdt1，anc2
 enum Token {INVALID, USDT_TOKEN, ANC_TOKEN}
 struct Record {
@@ -124,22 +124,22 @@ struct StakingOrder{
 
 //获取用户信息
 function getUserInfo(address user) external view returns(
-    Process.NodeType nodeType,  //节点类型
-    uint256 stakingUsdt,        //所有订单总共质押的usdt数量
-    StakingOrder[] memory orders,//当前用户的订单列表
-    address recommender,        //当前用户的邀请人地址
-    uint256 overallPerformance, //当前用户的总业绩
-    uint256 effectivePerformance,//当前用户的小区业绩
-    uint256 referralNum,         //当前用户的邀请总人数，伞下总人数
-    uint256 ancAward,           //当前用户可提取的anc收益，可提取
-    uint256 usdtAward           //当前用户可提取的usdt数量，可提取
+    Process.NodeType nodeType,  //节点类型，必须展示
+    uint256 stakingUsdt,        //所有订单总共质押的usdt数量，这个是算力确认文案后必须展示
+    StakingOrder[] memory orders,//当前用户的订单列表，必须展示
+    address recommender,        //当前用户的邀请人地址，必须展示
+    uint256 overallPerformance, //当前用户的总业绩，必须展示，这是总业绩包含小区业绩在内
+    uint256 effectivePerformance,//当前用户的小区业绩，必须展示，用户奖励数据都根据该数据分发
+    uint256 referralNum,         //当前用户的邀请总人数，伞下总人数，按需求决定是否展示
+    uint256 ancAward,           //当前用户可提取的anc收益，可提取，必须展示
+    uint256 usdtAward           //当前用户可提取的usdt数量，可提取，必须展示
 );
 function getUserOtherInfo(address user) external view returns(
-    uint256 todayAward,     //如果英雄榜改地址得到了usdt奖励，只展示
+    uint256 todayAward,     //如果英雄榜该地址得到了usdt奖励，只展示
     uint256 nodeAward,      //如果是节点，则会产生node usdt奖励，只展示
     uint256 referralAward,  //邀请层级奖励+2万usdt小区业绩达标的奖励，只展示
-    bool isRankAnc,         //是否达到2万usdt小区业绩，参与该项usdt奖励，做个标识
-    bool isRankUsdt         //是否达到5万usdt小区业绩，参与该项anc奖励，做个标识
+    bool isRankAnc,         //是否达到2万usdt小区业绩可以参与usdt奖励，做个标识，标识必须展示跟项目方确认文案
+    bool isRankUsdt         //是否达到5万usdt小区业绩可以参与该项anc奖励，做个标识，标识必须展示跟项目方确认文案
 );
 
 //英雄榜信息

@@ -239,8 +239,6 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         emit Claimed(msg.sender, amount);
     }
 
-
-
     //////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -384,8 +382,11 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
 
             // ⚠️ 关键：只按“当前 performance 占比”分本次 stakingDelta
             uint256 reward = sharePool * r.performance / totalPerf;
+            
+           
             if (reward == 0) continue;
-
+            //TODO
+            // if (_isOut(s)) continue;
             r.shareAward += reward;
             u.pendingBonus += reward;
 
@@ -415,12 +416,13 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
 
             (uint256 reward, bool[5] memory newPaid) =
                 Process.calcLevelBatchReward(r.level, levelPaid, amount);
-
+            
             if (reward > 0) {
                 if (totalUsed + reward > maxReward) {
                     reward = maxReward - totalUsed;
                 }
-
+                //TODO
+                // if (reward > 0 && !_isOut(current)) 
                 if (reward > 0) {
                     Process.User storage u = userInfo[current];
                     u.pendingBonus += reward;
@@ -449,9 +451,12 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
     function _processDirectAward(address user, uint256 amount) internal{
         address direct = referralInfo[user].recommender;
         if (direct == address(0)) return;
+        //// TODO
+        // if (_isOut(direct)) return;
         uint256 reward = amount * 10 / 100;
         Process.User storage u = userInfo[direct];
         Process.Referral storage r = referralInfo[direct];
+        
         u.pendingBonus += reward;
         r.referralAward += reward;
 
@@ -532,6 +537,34 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         return ILiquidityManager(liquidityManager).getAmountsOut(amountUSDT);
     }
 
+
+    function _totalGenerated(address user) internal view returns (uint256) {
+        Process.User storage u = userInfo[user];
+
+        // 未结算的 staking 收益
+        uint256 stakingAward = 0;
+        if (u.stakingUsdt > 0) {
+            stakingAward =
+                (block.timestamp - u.stakingTime)
+                * perSecondStakedAeward
+                * u.stakingUsdt
+                / decimals;
+        }
+
+        return
+            u.extracted +
+            u.pendingDividend +
+            stakingAward +
+            u.pendingBonus;
+    }
+
+    function _isOut(address user) internal view returns (bool) {
+        Process.User storage u = userInfo[user];
+        if (u.stakingUsdt == 0) return true;
+
+        uint256 maxAward = u.stakingUsdt * MULTIPLE;
+        return _totalGenerated(user) >= maxAward;
+    }
 
 
 }

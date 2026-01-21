@@ -126,13 +126,13 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         pause = isPause;
     }
 
-    function setNodeDividends(address _nodeDividends) external onlyOwner{
-        nodeDividends = _nodeDividends;
-    }
+    // function setNodeDividends(address _nodeDividends) external onlyOwner{
+    //     nodeDividends = _nodeDividends;
+    // }
 
-    function setLiquidityManager(address _liquidityManager) external onlyOwner{
-        liquidityManager = _liquidityManager;
-    }
+    // function setLiquidityManager(address _liquidityManager) external onlyOwner{
+    //     liquidityManager = _liquidityManager;
+    // }
 
     function emergencyWithdraw(address _token, uint256 _amount, address _to) external onlyAdmin {
         TransferHelper.safeTransfer(_token, _to, _amount);
@@ -386,7 +386,8 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
            
             if (reward == 0) continue;
             //TODO
-            // if (_isOut(s)) continue;
+            if (_isOut(s)) continue;
+
             r.shareAward += reward;
             u.pendingBonus += reward;
 
@@ -423,7 +424,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
                 }
                 //TODO
                 // if (reward > 0 && !_isOut(current)) 
-                if (reward > 0) {
+                if (reward > 0 && !_isOut(current)) {
                     Process.User storage u = userInfo[current];
                     u.pendingBonus += reward;
                     r.referralAward += reward;
@@ -452,7 +453,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         address direct = referralInfo[user].recommender;
         if (direct == address(0)) return;
         //// TODO
-        // if (_isOut(direct)) return;
+        if (_isOut(direct)) return;
         uint256 reward = amount * 10 / 100;
         Process.User storage u = userInfo[direct];
         Process.Referral storage r = referralInfo[direct];

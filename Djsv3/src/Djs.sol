@@ -159,9 +159,10 @@ contract Djs is ERC20, Ownable{
 
 
     function _updateCost(address to, uint256 amountToken) private{
-        if (to == address(pancakeRouter) || to == pancakePair) {
+        if (to == address(pancakeRouter) || to == pancakePair || to == DEAD) {
             return;
         }
+        
         uint256 price = currentPrice(); // USDT / token
         uint256 costUsdt = price * amountToken / 1e18;
         totalCostUsdt[to] += costUsdt;

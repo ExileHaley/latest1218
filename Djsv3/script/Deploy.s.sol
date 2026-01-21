@@ -47,6 +47,7 @@ contract DeployScript is Script {
     // address token;
 
     LiquidityManager public liquidityManager;
+    
 
     function setUp() public {
         initialCode = 0x681be3bA6D85Ff7Ed459372a3aEEEdf43c7Aa37d;
@@ -77,7 +78,6 @@ contract DeployScript is Script {
         vm.startBroadcast();
         // tether = new Tether(initialRecipient);
         djs = new Djs(initialRecipient, sellAndProfit, walletForProfit, USDT);
-        djs.setTradingOpen(true);
         address[4] memory addrs = [technology, foundation, marketingForDjsc, pot];
         djsc = new Djsc(addrs, sellFee, USDT);
 
@@ -131,10 +131,21 @@ contract DeployScript is Script {
         djs.setAllowlist(allows, true);
         djsc.setAllowlist(allows, true);
 
+        //设置黑名单
+        uint256[] memory tokenIds = new uint256[](4);
+        tokenIds[0] = 516;
+        tokenIds[1] = 517;
+        tokenIds[2] = 518;
+        tokenIds[3] = 870;
+
+        nodeDividends.setBlacklist(tokenIds);
+
         //转移管理员
         djs.transferOwnership(initialRecipient);
         djsc.transferOwnership(pot);
         vm.stopBroadcast();
+
+        assert(!djs.tradingOpen());
 
         // console.log("Tether deployed at:", address(tether));
         console.log("Djs deployed at:",address(djs));

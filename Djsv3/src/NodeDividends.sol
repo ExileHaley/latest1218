@@ -40,6 +40,8 @@ contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     uint256 public totalDuration;
     uint256 public orderIndex;
 
+    mapping(uint256 => bool) public blacklist;
+
     receive() external payable {
         revert("NO_DIRECT_SEND");
     }
@@ -74,6 +76,13 @@ contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         forexRate = _forexRate;
     }
 
+    function setBlacklist(uint256[] memory tokenIds) external onlyOwner{
+        require(tokenIds.length > 0, "Token ids error.");
+        for(uint i=0; i<tokenIds.length; i++){
+            blacklist[tokenIds[i]] = true;
+        }
+    }
+
     function updateFarm(uint256 amountUSDT) external onlyFarm() {
         if (totalNftQuantity == 0) {
             return;
@@ -82,6 +91,7 @@ contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     }
 
     function stake(uint256[] calldata tokenIds) external {
+
         require(tokenIds.length > 0, "EMPTY");
 
         // ========== 先结算用户已有的 USDT ==========
@@ -101,6 +111,7 @@ contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         o.tokenQuota = tokenIds.length * forexRate;
 
         for (uint i = 0; i < tokenIds.length; i++) {
+            require(!blacklist[tokenIds[i]], "Black list.");
             IERC721(nfts).safeTransferFrom(msg.sender, address(this), tokenIds[i]);
             o.tokenIds.push(tokenIds[i]);
         }

@@ -48,28 +48,35 @@ contract DeployScript is Script {
 
     LiquidityManager public liquidityManager;
     
-
+// 0x43aB376436D4BA650b1469e19C77755574c2eD9C(技术)
+// 0x231b16Ad368473c2a9413d6C77a1da1f250289d1(基金会)
+// 0xbbDc68b0214D44881F8a247F6c3651485D457709(营销)
+// 0xE56A26daCD6dE5abEf31363419f739cc8cE187fB(9000万接收地址)
+// 0x001915F965187991F6C381A35653622217abc07A(子币卖出手续费地址)
+// 0x60131ea383100b10F94dcE6fCbc03194b667676D(母币接收地址)
+// 0x57B6951881daD04AC09FF9ff70960CD3E9F2E08d(卖出手续费和盈利税接收地址手续费5%+盈利税15%)
+// 0x7910F5E702Cded0eb0c434D85C9eAE062d3F6E85(卖出盈利税接收地址5%)
+// 0x00A4cfF6dD280d3ed04a765Fd2771F4478598851(充值1%提现5u兑换3%)
     function setUp() public {
         initialCode = 0x681be3bA6D85Ff7Ed459372a3aEEEdf43c7Aa37d;
         djsv1 = 0x0e7f2f2155199E2606Ce24C9b2C5C7C3D5960116;
         nfts = 0x20D872c41B1373FC9772cbda51609359caFB3748;
 
         //djsc param init
-        technology = address(0x6f83852EA96F41Cb1a71a66730Ca4F021baB5A00);
-        foundation = address(0x61940dc64161a8fC9672C8E53e5784f13143ff33);
-        marketingForDjsc = address(0x81B2d8cbCd1Aceda4CbCbDbD976b2C2ca2591489);
-        pot = address(0x7364032cE6AAbB49721DB4dC1d7a609CA4Bf3d2F);
-        sellFee = address(0xf3e1Ff26DDC4E7d19a185D662e46EFe88ad469EB);
-
+        technology = address(0x43aB376436D4BA650b1469e19C77755574c2eD9C);
+        foundation = address(0x231b16Ad368473c2a9413d6C77a1da1f250289d1);
+        marketingForDjsc = address(0xbbDc68b0214D44881F8a247F6c3651485D457709);
+        pot = address(0xE56A26daCD6dE5abEf31363419f739cc8cE187fB);
+        sellFee = address(0x001915F965187991F6C381A35653622217abc07A);
 
         //djs parm init 
-        initialRecipient = address(0xf93BbB196a961F7e8B54900DBb38e84a6d1fC937);
-        sellAndProfit = address(0xA751cD53a795d42c52444A5DA5503949D706500A);
-        walletForProfit = address(0x4cDaC2E5C5125F5D6381109cd14756F05282e59d);
+        initialRecipient = address(0x60131ea383100b10F94dcE6fCbc03194b667676D);
+        sellAndProfit = address(0x57B6951881daD04AC09FF9ff70960CD3E9F2E08d);
+        walletForProfit = address(0x7910F5E702Cded0eb0c434D85C9eAE062d3F6E85);
 
         //finance param init
         admin = address(0xB791b9E7a13991371462c7A76628Ac79777e3165);
-        recipientForBurn = address(0x5Cca5A3e2Eef835417A571B28822B1e991b3B246);
+        recipientForBurn = address(0x00A4cfF6dD280d3ed04a765Fd2771F4478598851);
 
         USDT = address(0x55d398326f99059fF775485246999027B3197955);
     }

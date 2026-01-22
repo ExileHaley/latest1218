@@ -25,12 +25,7 @@ contract Gather is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentranc
     mapping(NodeType => uint256) public nodePrice;
 
     address public recipient;
-    struct Info{
-        address user;
-        NodeType nodeType;
-    }
-    Info[] infos;
-    address[] allAddrs;
+    mapping(NodeType => address[]) nodeAddrs;
     // Authorize contract upgrades only by the owner
     function _authorizeUpgrade(address newImplementation) internal view override onlyOwner(){}
 
@@ -42,7 +37,7 @@ contract Gather is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentranc
     }
 
 
-    function stake(NodeType nodeType) external nonReentrant(){
+    function buyNode(NodeType nodeType) external nonReentrant(){
         require(userInfo[msg.sender] == NodeType.INVALID, "Already purchased.");
         require(nodePrice[nodeType] > 0, "Price error.");
         TransferHelper.safeTransferFrom(USDT, msg.sender, address(this), nodePrice[nodeType]);
@@ -54,29 +49,13 @@ contract Gather is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentranc
         uint256 venusAmount = IERC20(VENUS).balanceOf(address(this));
         TransferHelper.safeTransfer(VENUS, recipient, venusAmount);
 
-
         userInfo[msg.sender] = nodeType;
-        infos.push(Info({
-            user:msg.sender,
-            nodeType:nodeType
-        }));
-        allAddrs.push(msg.sender);
+        nodeAddrs[nodeType].push(msg.sender);
+
         emit Staked(msg.sender, nodePrice[nodeType]);
     }
 
-    function getInfos() external view returns(Info[] memory){
-        return infos;
-    }
-
-    function getInfosLength() external view returns(uint256){
-        return infos.length;
-    }
-
-    function getAllAddrs() external view returns(address[] memory){
-        return allAddrs;
-    }
-
-    function getAllAddrsLength() external view returns(uint256){
-        return allAddrs.length;
+    function getNodeAddr(NodeType nodeType) external view returns(address[] memory){
+        return nodeAddrs[nodeType];
     }
 }

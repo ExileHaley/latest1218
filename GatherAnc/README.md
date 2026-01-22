@@ -17,7 +17,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable --no-commit --no
 $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 ### usdt:0x55d398326f99059fF775485246999027B3197955
-### gather:0xe6848219f0C9993151e09fE7DE3b72002c23ce52
+### gather:0x55b3b232e015FC3146185E29B22C92a96D3F6546
 ### abi:./out/Gather.sol/Gather.json
 ----------------------------------------------------
 ### recharge func list:

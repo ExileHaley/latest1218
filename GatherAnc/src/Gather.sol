@@ -25,12 +25,12 @@ contract Gather is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentranc
     mapping(NodeType => uint256) public nodePrice;
 
     address public recipient;
-
     struct Info{
         address user;
         NodeType nodeType;
     }
     Info[] infos;
+    address[] allAddrs;
     // Authorize contract upgrades only by the owner
     function _authorizeUpgrade(address newImplementation) internal view override onlyOwner(){}
 
@@ -60,11 +60,23 @@ contract Gather is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentranc
             user:msg.sender,
             nodeType:nodeType
         }));
-
+        allAddrs.push(msg.sender);
         emit Staked(msg.sender, nodePrice[nodeType]);
     }
 
     function getInfos() external view returns(Info[] memory){
         return infos;
+    }
+
+    function getInfosLength() external view returns(uint256){
+        return infos.length;
+    }
+
+    function getAllAddrs() external view returns(address[] memory){
+        return allAddrs;
+    }
+
+    function getAllAddrsLength() external view returns(uint256){
+        return allAddrs.length;
     }
 }

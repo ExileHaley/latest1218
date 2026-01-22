@@ -126,30 +126,49 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         pause = isPause;
     }
 
-    // function setNodeDividends(address _nodeDividends) external onlyOwner{
-    //     nodeDividends = _nodeDividends;
-    // }
+    function setNodeDividends(address _nodeDividends) external onlyOwner{
+        nodeDividends = _nodeDividends;
+    }
 
-    // function setLiquidityManager(address _liquidityManager) external onlyOwner{
-    //     liquidityManager = _liquidityManager;
-    // }
+    function setLiquidityManager(address _liquidityManager) external onlyOwner{
+        liquidityManager = _liquidityManager;
+    }
 
     function emergencyWithdraw(address _token, uint256 _amount, address _to) external onlyAdmin {
         TransferHelper.safeTransfer(_token, _to, _amount);
     }
 
-    function migrationReferral(address user) external nonReentrant{
-        Process.Referral storage r = referralInfo[user];
-        if(r.isMigration) revert Errors.AlreadyMigrated();
-        (address recommender,,,) = IDjsv1(djsv1).userInfo(user);
-        if(recommender == address(0)) revert Errors.NoMigrationRequired();
-        r.recommender = recommender;
-        r.isMigration = true;
+    function migrationReferral(address[] calldata users)
+        external
+        nonReentrant
+        onlyOwner
+    {
+        for (uint256 i = 0; i < users.length; ++i) {
+            address user = users[i];
+            Process.Referral storage r = referralInfo[user];
+
+            // V2 已经有邀请人，跳过
+            if (r.recommender != address(0)) continue;
+
+            (address recommender,,,) = IDjsv1(djsv1).userInfo(user);
+
+            // V1 没有邀请人，跳过
+            if (recommender == address(0)) continue;
+
+            // 防止自邀请
+            if (recommender == user) continue;
+
+            // 可选：防止把 initialCode 之外的“非法根节点”写进来
+            // if (recommender != initialCode && referralInfo[recommender].recommender == address(0)) continue;
+
+            r.recommender = recommender;
+        }
     }
+
 
     function referral(address recommender) external nonReentrant {
         //需要映射
-        if(whetherNeedMigrate(msg.sender)) revert Errors.NeedMigrate();
+        // if(whetherNeedMigrate(msg.sender)) revert Errors.NeedMigrate();
         if(recommender == address(0)) revert Errors.ZeroAddress();
         if(recommender == msg.sender) revert Errors.InvalidRecommender();
         if(recommender != initialCode) {
@@ -277,11 +296,6 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         return totalAward;
     }
 
-    function whetherNeedMigrate(address user) public view returns(bool){
-        (address v1Recommender,,,) = IDjsv1(djsv1).userInfo(user);
-        // 需要迁移的条件：v1 有 recommender 且 新系统未标记为已迁移
-        return (v1Recommender != address(0) && !referralInfo[user].isMigration);
-    }
 
     /**
     * @dev 结算用户到当前时间为止的【质押收益】，

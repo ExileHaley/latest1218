@@ -47,7 +47,7 @@ contract FarmView {
             // 从 FarmCore 获取 stakingUsdt
             (
                 ,uint256 stakingUsdt,,,,
-            )  = farmCore.userInfo(user);
+            )  = farmCore.userInfo(directAddr);
 
             // 从 FarmReferral 获取 overall 和 effective
             (, , , uint256 overallPerformance, uint256 effectivePerformance, ) = farmReferral.referralInfo(directAddr);

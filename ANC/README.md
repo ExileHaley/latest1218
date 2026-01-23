@@ -14,7 +14,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 
 ### deploy wallet
 ```shell
-$ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
+$ forge script script/DeployView.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 
 #### FarmCore.sol
@@ -51,7 +51,7 @@ $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --b
 #### farmNode:0x348E9C4D8049a29FA97f970427d293dcbb6c5ab3
 ==================================================================================================
 #### farmCore:0x63480bcdBC30EEDa70308F10c39585F61CAf29c7
-#### farmView:0x2E43f55F4E54b624d31E84200fd51ee01B2b5940
+#### farmView:0x837e7cAbD30A288b2527Ae7D45E4818f82e8C827
 ==================================================================================================
 ### farmCore func list:
 ```solidity

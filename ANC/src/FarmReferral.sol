@@ -13,6 +13,7 @@ import { FarmCore } from "./FarmCore.sol";
 contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    enum UpdateType {STAKE, REDEEM}
     uint16[20] public levelPercents;
 
     struct Referral {
@@ -33,12 +34,16 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
 
     mapping(address => mapping(address => uint256)) public linePerformance;
     mapping(address => address) public maxChild;
+    mapping(address => uint256) public maxChildPerformance;
 
     uint256 public totalUsdtRankEffectivePerformance;
     uint256 public totalAncRankEffectivePerformance;
 
     FarmCore public farmCore;
     address public initialCode;
+
+    uint256 private constant USDT_RANK_THRESHOLD = 2e4 * 1e18;
+    uint256 private constant ANC_RANK_THRESHOLD  = 5e4 * 1e18;
 
     function _authorizeUpgrade(address) internal view override onlyOwner {}
 
@@ -64,20 +69,18 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
         return referralInfo[user].recommender;
     }
 
+    // ====================== Referral Registration ======================
     function referral(address recommender, address[] calldata users) external onlyCore{
         if (recommender != initialCode) {
             require(
-                referralInfo[recommender].recommender != address(0),"RECOMMENDATION_IS_REQUIRED_REFERRAL"
+                referralInfo[recommender].recommender != address(0),
+                "RECOMMENDATION_IS_REQUIRED_REFERRAL"
             );
         }
 
         for(uint i=0; i<users.length; i++){
-            // user != recommender;
-            // user != initialCode;
-            // user.recommender == address(0)
             if(users[i] != recommender && users[i] != initialCode){
                 Referral storage r = referralInfo[users[i]];
-
                 if(r.recommender == address(0)) r.recommender = recommender;
             }
         }
@@ -85,7 +88,6 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
 
     function referral(address recommender, address user) external onlyCore nonReentrant {
         require(user != initialCode, "Invalid sender");
-
         if (recommender == address(0)) recommender = initialCode;
         require(recommender != user, "Invalid recommender");
 
@@ -96,58 +98,31 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
                 "RECOMMENDATION_IS_REQUIRED_REFERRAL"
             );
         }
-
         require(referralInfo[user].recommender == address(0), "InviterExists");
         referralInfo[user].recommender = recommender;
     }
 
-
+    // ====================== Stake / Redeem Processing ======================
     function processStakeReferralInfo(
         Process.NodeType nodeType,
         address user,
         uint256 amountLiquidity,
         uint256 amountUsdt
     ) external onlyCore {
-
         address current = referralInfo[user].recommender;
         uint8 level = 1;
-        uint256 num = 0;
+        uint256 num = _handleDirectReferral(current, user);
 
-        if (!directReferralAddrSets[current].contains(user)) {
-            directReferralAddrSets[current].add(user);
-            num = 1;
-        }
+        _updateEffectiveAndRank(user, amountLiquidity, UpdateType.STAKE);
 
-        while (current != address(0) && level <= 20) {
+        while (current != address(0) && level <= levelPercents.length) {
             Referral storage r = referralInfo[current];
-
             r.referralNum += num;
             r.overallPerformance += amountLiquidity;
-            linePerformance[current][user] += amountLiquidity;
 
-            _updateEffectiveAndRank(current);
+            _updateEffectiveAndRank(current, amountLiquidity, UpdateType.STAKE);
+            _tryIssueReferralReward(nodeType, current, user, level, amountUsdt);
 
-            
-            if(nodeType == Process.NodeType.INVALID){
-                uint256 directCount = directReferralAddrSets[current].length();
-                uint8 maxLevel = directCount > 9 ? 20 : uint8(directCount);
-
-                if (level <= maxLevel && amountUsdt > 0) {
-                    uint256 reward = amountUsdt * levelPercents[level - 1] / 10000;
-                    if (reward > 0) {
-                        r.usdtReferralAward += reward;
-                        awardRecords[current].push(
-                            Process.Record({
-                                token: Process.Token.USDT_TOKEN,
-                                from: user,
-                                amount: reward,
-                                time: block.timestamp
-                            })
-                        );
-                    }
-                }
-            }
-            
             current = r.recommender;
             level++;
         }
@@ -158,141 +133,193 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
         uint256 stakingUsdt
     ) external onlyCore {
         address current = referralInfo[user].recommender;
+        _updateEffectiveAndRank(user, stakingUsdt, UpdateType.REDEEM);
         uint8 level = 1;
 
-        while (current != address(0) && level <= 20) {
+        while (current != address(0) && level <= levelPercents.length) {
             Referral storage r = referralInfo[current];
-
-            r.overallPerformance =
-                r.overallPerformance >= stakingUsdt
-                    ? r.overallPerformance - stakingUsdt
-                    : 0;
-
-            linePerformance[current][user] =
-                linePerformance[current][user] >= stakingUsdt
-                    ? linePerformance[current][user] - stakingUsdt
-                    : 0;
-
-            _updateEffectiveAndRank(current);
-
+            r.overallPerformance -= stakingUsdt;
+            _updateEffectiveAndRank(current, stakingUsdt, UpdateType.REDEEM);
             current = r.recommender;
             level++;
         }
     }
 
-    function _updateEffectiveAndRank(address user) internal {
+    // ====================== Internal Helpers ======================
+    function _handleDirectReferral(address parent, address user) internal returns (uint256 num) {
+        if (!directReferralAddrSets[parent].contains(user)) {
+            directReferralAddrSets[parent].add(user);
+            return 1;
+        }
+        return 0;
+    }
+
+    function _tryIssueReferralReward(
+        Process.NodeType nodeType,
+        address current,
+        address user,
+        uint8 level,
+        uint256 amountUsdt
+    ) internal {
+        if (nodeType != Process.NodeType.INVALID || amountUsdt == 0) return;
+
+        uint256 directCount = directReferralAddrSets[current].length();
+        uint8 maxLevel = directCount > 9 ? 20 : uint8(directCount);
+        if (level > maxLevel) return;
+
+        uint256 reward = amountUsdt * levelPercents[level - 1] / 10000;
+        if (reward == 0) return;
+
+        referralInfo[current].usdtReferralAward += reward;
+        _recordAward(current, Process.Token.USDT_TOKEN, user, reward);
+    }
+
+    function _recordAward(
+        address user,
+        Process.Token token,
+        address from,
+        uint256 amount
+    ) internal {
+        awardRecords[user].push(
+            Process.Record({
+                token: token,
+                from: from,
+                amount: amount,
+                time: block.timestamp
+            })
+        );
+    }
+
+    function _updateEffectiveAndRank(
+        address user,
+        uint256 amountLiquidity,
+        UpdateType updateType
+    ) internal {
         Referral storage r = referralInfo[user];
         uint256 oldEffective = r.effectivePerformance;
+        address parent = r.recommender;
 
-        address[] memory directs = directReferralAddrSets[user].values();
-        uint256 total;
-        uint256 maxValue;
-        address maxAddr;
+        // ===== 更新父子线业绩 =====
+        if (parent != address(0)) {
+            if (updateType == UpdateType.STAKE) {
+                uint256 newVal = linePerformance[parent][user] + amountLiquidity;
+                linePerformance[parent][user] = newVal;
 
-        for (uint256 i = 0; i < directs.length; i++) {
-            uint256 v = linePerformance[user][directs[i]];
-            total += v;
-            if (v > maxValue || (v == maxValue && directs[i] < maxAddr)) {
-                maxValue = v;
-                maxAddr = directs[i];
+                if (
+                    newVal > maxChildPerformance[parent] ||
+                    (newVal == maxChildPerformance[parent] && user < maxChild[parent])
+                ) {
+                    maxChildPerformance[parent] = newVal;
+                    maxChild[parent] = user;
+                }
+            } else {
+                linePerformance[parent][user] -= amountLiquidity;
+                if (maxChild[parent] == user) {
+                    _rebuildMaxChild(parent);
+                }
             }
         }
 
-        maxChild[user] = maxAddr;
+        // ===== 更新 effectivePerformance =====
+        uint256 maxVal = maxChildPerformance[user];
+        r.effectivePerformance = r.overallPerformance > maxVal ? r.overallPerformance - maxVal : 0;
 
-        uint256 newEffective = total > maxValue ? total - maxValue : 0;
-        r.effectivePerformance = newEffective;
+        // ===== 更新排行榜 =====
+        _updateRank(user, oldEffective, r.effectivePerformance);
+    }
 
+    function _rebuildMaxChild(address parent) internal {
+        address[] memory directs = directReferralAddrSets[parent].values();
+        uint256 maxVal = 0;
+        address maxAddr = address(0);
+
+        for (uint256 i = 0; i < directs.length; i++) {
+            address d = directs[i];
+            uint256 v = linePerformance[parent][d];
+
+            if (v > maxVal || (v == maxVal && d < maxAddr)) {
+                maxVal = v;
+                maxAddr = d;
+            }
+        }
+
+        maxChildPerformance[parent] = maxVal;
+        maxChild[parent] = maxAddr;
+    }
+
+    function _updateRank(
+        address user,
+        uint256 oldEffective,
+        uint256 newEffective
+    ) internal {
         bool wasUsdt = usdtRankAddrSets.contains(user);
         bool wasAnc = ancRankAddrSets.contains(user);
 
         // ===== USDT Rank =====
         if (wasUsdt) {
-            // 先假设仍在榜内，做 delta
             totalUsdtRankEffectivePerformance =
                 totalUsdtRankEffectivePerformance + newEffective - oldEffective;
 
-            // 若跌破门槛，再整体移除（回滚 delta，改为 -old）
-            if (newEffective < 2e4 * 1e18) {
+            if (newEffective < USDT_RANK_THRESHOLD) {
                 usdtRankAddrSets.remove(user);
                 totalUsdtRankEffectivePerformance -= newEffective;
             }
-        } else {
-            // 原本不在榜
-            if (newEffective >= 2e4 * 1e18) {
-                usdtRankAddrSets.add(user);
-                totalUsdtRankEffectivePerformance += newEffective;
-            }
+        } else if (newEffective >= USDT_RANK_THRESHOLD) {
+            usdtRankAddrSets.add(user);
+            totalUsdtRankEffectivePerformance += newEffective;
         }
 
-        // ===== ANC Rank（同理）=====
+        // ===== ANC Rank =====
         if (wasAnc) {
             totalAncRankEffectivePerformance =
                 totalAncRankEffectivePerformance + newEffective - oldEffective;
 
-            if (newEffective < 5e4 * 1e18) {
+            if (newEffective < ANC_RANK_THRESHOLD) {
                 ancRankAddrSets.remove(user);
                 totalAncRankEffectivePerformance -= newEffective;
             }
-        } else {
-            if (newEffective >= 5e4 * 1e18) {
-                ancRankAddrSets.add(user);
-                totalAncRankEffectivePerformance += newEffective;
-            }
+        } else if (newEffective >= ANC_RANK_THRESHOLD) {
+            ancRankAddrSets.add(user);
+            totalAncRankEffectivePerformance += newEffective;
         }
     }
 
-
+    // ====================== Rank Award ======================
     function issueUsdtAwardForRank(uint256 amount) external onlyCore {
         if (amount == 0 || totalUsdtRankEffectivePerformance == 0) return;
-
         address[] memory users = usdtRankAddrSets.values();
-        for (uint256 i = 0; i < users.length; i++) {
+        uint256 len = users.length;
+
+        for (uint256 i; i < len; i++) {
             Referral storage r = referralInfo[users[i]];
             if (r.effectivePerformance == 0) continue;
 
-            uint256 reward =
-                amount * r.effectivePerformance / totalUsdtRankEffectivePerformance;
-
+            uint256 reward = amount * r.effectivePerformance / totalUsdtRankEffectivePerformance;
             if (reward == 0) continue;
 
             r.usdtReferralAward += reward;
-            awardRecords[users[i]].push(
-                Process.Record({
-                    token: Process.Token.USDT_TOKEN,
-                    from: address(0),
-                    amount: reward,
-                    time: block.timestamp
-                })
-            );
+            _recordAward(users[i], Process.Token.USDT_TOKEN, address(0), reward);
         }
     }
 
     function issueAncAwardForRank(uint256 amount) external onlyCore {
         if (amount == 0 || totalAncRankEffectivePerformance == 0) return;
-
         address[] memory users = ancRankAddrSets.values();
-        for (uint256 i = 0; i < users.length; i++) {
+        uint256 len = users.length;
+
+        for (uint256 i; i < len; i++) {
             Referral storage r = referralInfo[users[i]];
-            if (r.effectivePerformance < 5e4 * 1e18) continue;
+            if (r.effectivePerformance < ANC_RANK_THRESHOLD) continue;
 
-            uint256 reward =
-                amount * r.effectivePerformance / totalAncRankEffectivePerformance;
-
+            uint256 reward = amount * r.effectivePerformance / totalAncRankEffectivePerformance;
             if (reward == 0) continue;
 
             r.ancReferralAward += reward;
-            awardRecords[users[i]].push(
-                Process.Record({
-                    token: Process.Token.ANC_TOKEN,
-                    from: address(0),
-                    amount: reward,
-                    time: block.timestamp
-                })
-            );
+            _recordAward(users[i], Process.Token.ANC_TOKEN, address(0), reward);
         }
     }
 
+    // ====================== View / Getters ======================
     function getDirectReferralAddrs(address user) external view returns (address[] memory) {
         return directReferralAddrSets[user].values();
     }
@@ -314,4 +341,3 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
         isRankUsdt = usdtRankAddrSets.contains(user);
     }
 }
-

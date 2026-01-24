@@ -14,7 +14,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 
 ### deploy wallet
 ```shell
-$ forge script script/DeployView.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
+$ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 
 #### FarmCore.sol
@@ -41,17 +41,17 @@ $ forge script script/DeployView.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz
 
   
 ==================================================================================================
-#### USDT测试代币;0xc0Ac74c92e1ce9100316156cf80b3809d63Be4dA
-#### ANC 代币:0x73587A63886CCAA7D59E3Dc53EA2272fab85253A
-#### ANC pancakePair:0x6eE140Aff07B5B3556CC773a286D6c2DcbC423C1
+#### USDT测试代币;0xa738c5B0EAa2dDa253764Ae6e42a1aF636b191Ac
+#### ANC 代币:0x3E581a43b5f217C33aeeeC7CF47681549860b166
+#### ANC pancakePair:0x0180dE14F352b9e8A5389f0aC52C1bD0D5b0a720
 ==================================================================================================
-#### liquidityManager:0xb5e9E6E2E749Cba23C4A3e5126CDe88Ce08B9155
-#### farmReferral:0x9B2DfA8ff3c44D928085c9208B5B9430eC66dc3B
-#### farmToday:0x42Fa8067d9948D6cB0EFDf6F8Ed5F822414998Fc
-#### farmNode:0x348E9C4D8049a29FA97f970427d293dcbb6c5ab3
+#### liquidityManager:0x33D29c4063d05ebc0652C3E7e531464067618fE2
+#### farmReferral:0xF8983d197bA821b586fb1C648fD09Fd040299081
+#### farmToday:0x90ca38C522cF04184590C15Ec585181bAcFaca5C
+#### farmNode:0x4fc705bd61846D5558a5e84A46CE7F486EE03689
 ==================================================================================================
-#### farmCore:0x63480bcdBC30EEDa70308F10c39585F61CAf29c7
-#### farmView:0x837e7cAbD30A288b2527Ae7D45E4818f82e8C827
+#### farmCore:0xf22403662942E612F3C361cEdC1df0724bf32783
+#### farmView:0xe8B2aC974C29ce5d093E47388C1EF45051450FDf
 ==================================================================================================
 ### farmCore func list:
 ```solidity

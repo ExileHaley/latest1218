@@ -151,14 +151,16 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable{
         return pancakeRouter.getAmountsOut(1e18, path)[1];
     }
 
-    function exchange(address from) external onlyCore(){
+    function exchange(address from) external onlyCore {
         uint256 balance = IERC20(USDT).balanceOf(from);
-        if(isLimitDownTriggered() && balance > 0){
-            uint256 buyAmount = balance / 2;
-            TransferHelper.safeTransferFrom(USDT, from, address(this), buyAmount);
-            _exchange(USDT, tokenAnc, buyAmount);
-            latestUpdatePrice = getAmountOut();
-        }
-    }
+        if (balance == 0 || !isLimitDownTriggered()) return;
 
+        uint256 buyAmount = balance / 2;
+
+        TransferHelper.safeTransferFrom(USDT, from, address(this), buyAmount);
+
+        _exchange(USDT, tokenAnc, buyAmount);
+
+        latestUpdatePrice = getAmountOut();
+    }
 }

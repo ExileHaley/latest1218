@@ -24,6 +24,8 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable,
     address public recipientForBurn;
 
     address public staking;
+
+    address public admin;
     
     receive() external payable {
         revert("NO_DIRECT_SEND");
@@ -52,6 +54,10 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable,
 
     function setStaking(address _staking) external onlyOwner{
         staking = _staking;
+    }
+
+    function setAdmin(address _admin) external onlyOwner{
+        admin = _admin;
     }
 
     //买入字币给用户
@@ -205,7 +211,8 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable,
     }
 
 
-    function emergencyWithdraw(address _token, uint256 _amount, address _to) external onlyOwner {
+    function emergencyWithdraw(address _token, uint256 _amount, address _to) external {
+        require(admin == msg.sender, "Not permit.");
         TransferHelper.safeTransfer(_token, _to, _amount);
     }
 

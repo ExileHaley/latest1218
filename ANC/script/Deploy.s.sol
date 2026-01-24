@@ -34,13 +34,20 @@ contract DeployScript is Script {
 
     FarmView farmView;
 
+//     代币接收地址0x6772718B1db9888CFfc3B939A2f4742A30A3b90d
+//         每日销毁10%Anc接收地址0xfD35119FCd7ecBC0cc56f97619480216F0c0B832
+//         社区20% usdt接收地址、0x0e820636CA2317828789115564F530192F077cBb
+//         保护币价下跌usdt接收地址0xF0747A9f5D583f1ADd453d7e2E1602023e9291E7
+//         添加节点管理员地址0x798a46C31fdb255FaCB2E05441B4a754Fb0B967C
+//         首码地址
+// 0x9e343C0e62a57251A926cee221d3A1FDA1b2f999
     function setUp() public {
-        initialRecipient = address(0xf28a8D50d73D1c17Fb212018aCE61E6ec7defBc5);
-        recipient = address(0xFbAA63fe100a513E1f52585eD9bfc4F273652F14);
-        community = address(0x63ff70308FB79a583C2684B7407305107E4a3A56);
-        buyBack = address(0x2bc0AcA0C99596f8C84578bFa729858f6A7a7443);
+        initialRecipient = address(0x6772718B1db9888CFfc3B939A2f4742A30A3b90d);
+        recipient = address(0xfD35119FCd7ecBC0cc56f97619480216F0c0B832);
+        community = address(0x0e820636CA2317828789115564F530192F077cBb);
+        buyBack = address(0xF0747A9f5D583f1ADd453d7e2E1602023e9291E7);
         admin = address(0xCf8f660e4de36a5c84A95104deC347b5891dD963);
-        initialCode = address(0x2b8C4583331635355CD6d687B2884518ECA240b2);
+        initialCode = address(0x9e343C0e62a57251A926cee221d3A1FDA1b2f999);
     }
 
     function run() public {

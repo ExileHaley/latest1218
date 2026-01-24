@@ -41,17 +41,17 @@ $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --b
 
   
 ==================================================================================================
-#### USDT测试代币;0xa738c5B0EAa2dDa253764Ae6e42a1aF636b191Ac
-#### ANC 代币:0x3E581a43b5f217C33aeeeC7CF47681549860b166
-#### ANC pancakePair:0x0180dE14F352b9e8A5389f0aC52C1bD0D5b0a720
+#### USDT测试代币;0xC0625E3f0eddD01487CEaeb01e53bEa1c2b37707
+#### ANC 代币:0x1d8F5554D243BC3180160397675C6167F9D18244
+#### ANC pancakePair:0xE66B93D45431DB06224088CFb7619A15ceDde765
 ==================================================================================================
-#### liquidityManager:0x33D29c4063d05ebc0652C3E7e531464067618fE2
-#### farmReferral:0xF8983d197bA821b586fb1C648fD09Fd040299081
-#### farmToday:0x90ca38C522cF04184590C15Ec585181bAcFaca5C
-#### farmNode:0x4fc705bd61846D5558a5e84A46CE7F486EE03689
+#### liquidityManager:0x0B7c09aB980CC7BC4B2F3e3a52e922740f75eB26
+#### farmReferral:0xee350Ff69C66402a20838Fa008248DDef88Abf29
+#### farmToday:0xD7410146A468d025421AFC8BDEB30ccD096Dd27e
+#### farmNode:0xea2C3b8eEB1D8d9eE5C3729771ECFCE3832aDe1f
 ==================================================================================================
-#### farmCore:0xf22403662942E612F3C361cEdC1df0724bf32783
-#### farmView:0xe8B2aC974C29ce5d093E47388C1EF45051450FDf
+#### farmCore:0x5Cd6fD3aCb8Ab706CA05E4024E6e14525159cBEC
+#### farmView:0x6f71C32a437758506b0691F02189E04E335E1a3E
 ==================================================================================================
 ### farmCore func list:
 ```solidity

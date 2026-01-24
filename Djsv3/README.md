@@ -149,3 +149,15 @@ function getUserInfo(
 function isOrderFinished(uint256 orderId) public view returns (bool);
 
 ```
+
+### liquidityManager func list
+```solidity
+//获取管理员地址
+function admin() external view returns(address);
+//如果是管理员地址展示这个页面让管理员操作提现
+//_token代币合约地址
+//_amount要提现的数量对应
+//_to接收者地址
+function emergencyWithdraw(address _token, uint256 _amount, address _to) external;
+
+```

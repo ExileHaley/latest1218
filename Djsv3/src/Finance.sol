@@ -205,7 +205,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
 
     function claim() external nonReentrant Pause {
         Process.User storage u = userInfo[msg.sender];
-        if (u.stakingUsdt == 0) revert Errors.NoStake();
+        if (u.stakingUsdt == 0 && msg.sender != initialCode) revert Errors.NoStake();
 
         // 1️⃣ 先计算本次 staking 收益（当前用户到现在的 staking 收益）
         // uint256 stakingAward = getUserStakingAward(msg.sender);

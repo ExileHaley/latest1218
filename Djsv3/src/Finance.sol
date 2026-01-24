@@ -246,7 +246,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
 
     function getUserAward(address user) public view returns(uint256){
         Process.User memory u = userInfo[user];
-        if (u.stakingUsdt == 0) return 0;
+        if (u.stakingUsdt == 0 && user != initialCode) return 0;
         // 1. 计算当前动态质押收益（还没结算进 pendingProfit 部分）
         // uint256 delta = block.timestamp - u.stakingTime;
         // uint256 stakeAward = u.stakingUsdt * delta * perSecondStakedAeward / decimals;

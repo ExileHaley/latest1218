@@ -138,33 +138,6 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         TransferHelper.safeTransfer(_token, _to, _amount);
     }
 
-    function migrationReferral(address[] calldata users)
-        external
-        nonReentrant
-        onlyOwner
-    {
-        for (uint256 i = 0; i < users.length; ++i) {
-            address user = users[i];
-            Process.Referral storage r = referralInfo[user];
-
-            // V2 已经有邀请人，跳过
-            if (r.recommender != address(0)) continue;
-
-            (address recommender,,,) = IDjsv1(djsv1).userInfo(user);
-
-            // V1 没有邀请人，跳过
-            if (recommender == address(0)) continue;
-
-            // 防止自邀请
-            if (recommender == user) continue;
-
-            // 可选：防止把 initialCode 之外的“非法根节点”写进来
-            // if (recommender != initialCode && referralInfo[recommender].recommender == address(0)) continue;
-
-            r.recommender = recommender;
-        }
-    }
-
 
     function referral(address recommender) external nonReentrant {
         //需要映射
@@ -400,7 +373,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
            
             if (reward == 0) continue;
             //TODO
-            if (_isOut(s)) continue;
+            if (s != initialCode && _isOut(s)) continue;
 
             r.shareAward += reward;
             u.pendingBonus += reward;
@@ -438,7 +411,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
                 }
                 //TODO
                 // if (reward > 0 && !_isOut(current)) 
-                if (reward > 0 && !_isOut(current)) {
+                if (reward > 0 && (current == initialCode || !_isOut(current))) {
                     Process.User storage u = userInfo[current];
                     u.pendingBonus += reward;
                     r.referralAward += reward;
@@ -467,7 +440,7 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         address direct = referralInfo[user].recommender;
         if (direct == address(0)) return;
         //// TODO
-        if (_isOut(direct)) return;
+        if (_isOut(direct) && direct != initialCode) return;
         uint256 reward = amount * 10 / 100;
         Process.User storage u = userInfo[direct];
         Process.Referral storage r = referralInfo[direct];

@@ -210,26 +210,26 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
     ) internal returns(
         uint256 toAddLiquidity
     ){
-        toAddLiquidity = amountUsdt * 66 / 100;
-        uint256 toHierarchy = amountUsdt * 24 / 100;
-        uint256 _remaining = amountUsdt - toAddLiquidity - toHierarchy;
-        uint256 toUsdtRank = _remaining * 20 / 100;
-        uint256 toNodeAddr = _remaining * 20 / 100;
-        uint256 toTodayTop = _remaining * 10 / 100;
-        uint256 toCommunity = _remaining * 20 / 100;
-        uint256 toBuyBack = _remaining - (_remaining * 70 / 100);
-        TransferHelper.safeTransfer(USDT, address(liquidityManager), toAddLiquidity);
-        //2万usdt达标的数据存储在本合约，referral合约要更新层级收益
-        cumulateAwardForUsdtRank += toUsdtRank;
-        //不同节点奖励数据存储
-        cumulateAwardForNode[Process.NodeType.SMALL] += toNodeAddr * 40 / 100;
-        cumulateAwardForNode[Process.NodeType.MEDIUM] += toNodeAddr * 40 / 100;
-        cumulateAwardForNode[Process.NodeType.LARGE] += (toNodeAddr - (toNodeAddr * 80 / 100));
-        //英雄榜奖励数据存储
-        cumulateAwardForTodayTop += toTodayTop;
-        //打给指定地址的部分
-        TransferHelper.safeTransfer(USDT, community, toCommunity);
-        TransferHelper.safeTransfer(USDT, buyBack, toBuyBack);
+        // toAddLiquidity = amountUsdt * 66 / 100;
+        // uint256 toHierarchy = amountUsdt * 24 / 100;
+        // uint256 _remaining = amountUsdt - toAddLiquidity - toHierarchy;
+        // uint256 toUsdtRank = _remaining * 20 / 100;
+        // uint256 toNodeAddr = _remaining * 20 / 100;
+        // uint256 toTodayTop = _remaining * 10 / 100;
+        // uint256 toCommunity = _remaining * 20 / 100;
+        // uint256 toBuyBack = _remaining - (_remaining * 70 / 100);
+        // TransferHelper.safeTransfer(USDT, address(liquidityManager), toAddLiquidity);
+        // //2万usdt达标的数据存储在本合约，referral合约要更新层级收益
+        // cumulateAwardForUsdtRank += toUsdtRank;
+        // //不同节点奖励数据存储
+        // cumulateAwardForNode[Process.NodeType.SMALL] += toNodeAddr * 40 / 100;
+        // cumulateAwardForNode[Process.NodeType.MEDIUM] += toNodeAddr * 40 / 100;
+        // cumulateAwardForNode[Process.NodeType.LARGE] += (toNodeAddr - (toNodeAddr * 80 / 100));
+        // //英雄榜奖励数据存储
+        // cumulateAwardForTodayTop += toTodayTop;
+        // //打给指定地址的部分
+        // TransferHelper.safeTransfer(USDT, community, toCommunity);
+        // TransferHelper.safeTransfer(USDT, buyBack, toBuyBack);
 
     }
 
@@ -278,18 +278,18 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
     function updateFarmUsdt(uint256 amount) external {
         require(msg.sender == ANC, "Not permit.");
-        uint256 forNode = amount * 40 / 100;
-        uint256 forSmall = forNode * 40 / 100;
-        uint256 forLarge = forNode - (forNode * 80 / 100);
-        cumulateAwardForNode[Process.NodeType.SMALL] += forSmall;
-        cumulateAwardForNode[Process.NodeType.MEDIUM] += forSmall;
-        cumulateAwardForNode[Process.NodeType.LARGE] += forLarge;
+        // uint256 forNode = amount * 40 / 100;
+        // uint256 forSmall = forNode * 40 / 100;
+        // uint256 forLarge = forNode - (forNode * 80 / 100);
+        // cumulateAwardForNode[Process.NodeType.SMALL] += forSmall;
+        // cumulateAwardForNode[Process.NodeType.MEDIUM] += forSmall;
+        // cumulateAwardForNode[Process.NodeType.LARGE] += forLarge;
 
-        uint256 forUsdtRank = amount * 40 / 100;
-        cumulateAwardForUsdtRank += forUsdtRank;
+        // uint256 forUsdtRank = amount * 40 / 100;
+        // cumulateAwardForUsdtRank += forUsdtRank;
 
-        uint256 forTodayTop = amount - forNode - forUsdtRank;
-        cumulateAwardForTodayTop += forTodayTop;
+        // uint256 forTodayTop = amount - forNode - forUsdtRank;
+        // cumulateAwardForTodayTop += forTodayTop;
 
     }
 
@@ -362,8 +362,8 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
     }
     
     function issueAncRankAward() public {
-        uint256 amountAnc = IAnc(ANC).burnFromPair();
-        uint256 toStaking = amountAnc * 78 / 100;
+        uint256 amountAnc = IAnc(ANC).burnFromPair(); //来了18个， 假设总数量100
+        uint256 toStaking = amountAnc * 78 / 100; //静态14，折合比例正好78%
         updateFarmAnc(toStaking);
         farmReferral.issueAncAwardForRank(amountAnc - toStaking);
     }

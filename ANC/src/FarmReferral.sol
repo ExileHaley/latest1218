@@ -42,8 +42,8 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
     FarmCore public farmCore;
     address public initialCode;
 
-    uint256 private constant USDT_RANK_THRESHOLD = 2e4 * 1e18;
-    uint256 private constant ANC_RANK_THRESHOLD  = 5e4 * 1e18;
+    uint256 private constant USDT_RANK_THRESHOLD = 1e4 * 1e18;
+    uint256 private constant ANC_RANK_THRESHOLD  = 3e4 * 1e18;
 
     function _authorizeUpgrade(address) internal view override onlyOwner {}
 
@@ -51,8 +51,7 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
         __Ownable_init(_msgSender());
         initialCode = _initialCode;
         levelPercents = [
-            1000,500,200,80,80,80,80,80,80,20,
-            20,20,20,20,20,20,20,20,20,20
+            800,300,50,50,50,50,50,50,50,50
         ];
     }
 
@@ -163,15 +162,15 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
     ) internal {
         if (nodeType != Process.NodeType.INVALID || amountUsdt == 0) return;
 
-        uint256 directCount = directReferralAddrSets[current].length();
-        uint8 maxLevel = directCount > 9 ? 20 : uint8(directCount);
-        if (level > maxLevel) return;
+        // uint256 directCount = directReferralAddrSets[current].length();
+        // uint8 maxLevel = directCount > 9 ? 20 : uint8(directCount);
+        // if (level > maxLevel) return;
 
-        uint256 reward = amountUsdt * levelPercents[level - 1] / 10000;
-        if (reward == 0) return;
+        // uint256 reward = amountUsdt * levelPercents[level - 1] / 10000;
+        // if (reward == 0) return;
 
-        referralInfo[current].usdtReferralAward += reward;
-        _recordAward(current, Process.Token.USDT_TOKEN, user, reward);
+        // referralInfo[current].usdtReferralAward += reward;
+        // _recordAward(current, Process.Token.USDT_TOKEN, user, reward);
     }
 
     function _recordAward(
@@ -282,6 +281,9 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
             ancRankAddrSets.add(user);
             totalAncRankEffectivePerformance += newEffective;
         }
+
+
+        //10w 
     }
 
     // ====================== Rank Award ======================
@@ -303,20 +305,20 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
     }
 
     function issueAncAwardForRank(uint256 amount) external onlyCore {
-        if (amount == 0 || totalAncRankEffectivePerformance == 0) return;
-        address[] memory users = ancRankAddrSets.values();
-        uint256 len = users.length;
+        // if (amount == 0 || totalAncRankEffectivePerformance == 0) return;
+        // address[] memory users = ancRankAddrSets.values();
+        // uint256 len = users.length;
 
-        for (uint256 i; i < len; i++) {
-            Referral storage r = referralInfo[users[i]];
-            if (r.effectivePerformance < ANC_RANK_THRESHOLD) continue;
+        // for (uint256 i; i < len; i++) {
+        //     Referral storage r = referralInfo[users[i]];
+        //     if (r.effectivePerformance < ANC_RANK_THRESHOLD) continue;
 
-            uint256 reward = amount * r.effectivePerformance / totalAncRankEffectivePerformance;
-            if (reward == 0) continue;
+        //     uint256 reward = amount * r.effectivePerformance / totalAncRankEffectivePerformance;
+        //     if (reward == 0) continue;
 
-            r.ancReferralAward += reward;
-            _recordAward(users[i], Process.Token.ANC_TOKEN, address(0), reward);
-        }
+        //     r.ancReferralAward += reward;
+        //     _recordAward(users[i], Process.Token.ANC_TOKEN, address(0), reward);
+        // }
     }
 
     // ====================== View / Getters ======================

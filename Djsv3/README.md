@@ -14,7 +14,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 
 ### deploy wallet
 ```shell
-$ forge script script/Upgrade.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
+$ forge script script/DeployExchange.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 
 ### 更新ABI，getDirectReferralInfo方法返回结构体字段有变化
@@ -40,7 +40,8 @@ $ forge script script/Upgrade.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --
 -----------------------------------------------------------------------------------
 #### nodeDividends:0x24629495Bfd635a50B105efd602b104139eF2F8B
 -----------------------------------------------------------------------------------
-
+#### Exchange:0x87924102384beEA7c10553283bE3b32BA8a7deB7
+-----------------------------------------------------------------------------------
 
 ### finance func list
 ```solidity
@@ -160,4 +161,13 @@ function admin() external view returns(address);
 //_to接收者地址
 function emergencyWithdraw(address _token, uint256 _amount, address _to) external;
 
+```
+
+### Exchange func list
+#### 本合约用于卖出DJS，DJS对本合约进行授权才能进行卖出
+```solidity
+//兑换，amountDJS是DJS的数量，将指定数量的DJS兑换为USDT
+function exhcange(uint256 amountDJS) external;
+//查询兑换价格，输入DJS的数量amountDJS，返回兑换USDT的结果大概多少个
+function getAmountsOut(uint256 amountDJS) external view returns (uint256);
 ```

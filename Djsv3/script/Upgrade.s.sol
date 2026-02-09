@@ -14,7 +14,7 @@ contract UpgradeScript is Script{
 
     function run() public {
         vm.startBroadcast();
-
+        vm.txGasPrice(90_000_0000); // 0.09 gwei
         Finance financeV2Impl = new Finance();
         bytes memory data= "";
         finance.upgradeToAndCall(address(financeV2Impl), data);

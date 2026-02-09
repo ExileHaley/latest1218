@@ -185,7 +185,10 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         _settleStakingReward(msg.sender);
 
         //质押数量更新
-        u.stakingUsdt += amountUSDT;
+        // u.stakingUsdt += amountUSDT;
+        if(_isOut(msg.sender)) u.stakingUsdt = amountUSDT;
+        else u.stakingUsdt += amountUSDT;
+        
         if(u.stakingUsdt >= 1000e18 && !u.addSubCoinQuota){
             u.addSubCoinQuota = true;
             r.subCoinQuota += 10e18;
@@ -275,10 +278,10 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
     *      只结算 staking 收益，不涉及 referral / share。
     *      调用后会重置 stakingTime。
     */
-    function _settleStakingReward(address user) internal  {
+    function _settleStakingReward(address user) internal {
         Process.User storage u = userInfo[user];
 
-        // 没有质押则不处理
+        // 没有质押则不处理，只更新 stakingTime
         if (u.stakingUsdt == 0) {
             u.stakingTime = block.timestamp;
             return;
@@ -288,14 +291,20 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         uint256 delta = block.timestamp - u.stakingTime;
         if (delta == 0) return;
 
-        // 计算 staking 收益
-        uint256 reward =
-                delta
-                * perSecondStakedAeward
-                * u.stakingUsdt
-                / decimals;
+        // 计算本次 staking 收益
+        uint256 reward = delta * perSecondStakedAeward * u.stakingUsdt / decimals;
 
-        // 累加到 pending
+        // 计算用户剩余可提额度
+        uint256 maxReward = u.stakingUsdt * MULTIPLE;
+        uint256 totalPending = u.extracted + u.pendingDividend + u.pendingBonus;
+
+        if (totalPending >= maxReward) {
+            reward = 0; // 已到上限，不再产生 staking 收益
+        } else if (totalPending + reward > maxReward) {
+            reward = maxReward - totalPending; // 超出部分截断
+        }
+
+        // 累加到 pendingDividend
         if (reward > 0) {
             u.pendingDividend += reward;
         }
@@ -303,6 +312,35 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
         // 重置质押时间
         u.stakingTime = block.timestamp;
     }
+
+    // function _settleStakingReward(address user) internal  {
+    //     Process.User storage u = userInfo[user];
+
+    //     // 没有质押则不处理
+    //     if (u.stakingUsdt == 0) {
+    //         u.stakingTime = block.timestamp;
+    //         return;
+    //     }
+
+    //     // 距离上次结算的时间
+    //     uint256 delta = block.timestamp - u.stakingTime;
+    //     if (delta == 0) return;
+
+    //     // 计算 staking 收益
+    //     uint256 reward =
+    //             delta
+    //             * perSecondStakedAeward
+    //             * u.stakingUsdt
+    //             / decimals;
+
+    //     // 累加到 pending
+    //     if (reward > 0) {
+    //         u.pendingDividend += reward;
+    //     }
+
+    //     // 重置质押时间
+    //     u.stakingTime = block.timestamp;
+    // }
 
     function processUpgrade(address user, uint256 amount, uint256 num) internal{
         address current = referralInfo[user].recommender;

@@ -186,15 +186,22 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
 
         //质押数量更新
         // u.stakingUsdt += amountUSDT;
-        if(_isOut(msg.sender)) u.stakingUsdt = amountUSDT;
-        else u.stakingUsdt += amountUSDT;
+        if(_isOut(msg.sender)) {
+            _handleOutUserReward(msg.sender);
+            totalStakedUsdt -= u.stakingUsdt;
+            u.stakingUsdt = amountUSDT;
+            totalStakedUsdt += amountUSDT;
+        }else {
+            u.stakingUsdt += amountUSDT;
+            totalStakedUsdt += amountUSDT;
+        }
         
         if(u.stakingUsdt >= 1000e18 && !u.addSubCoinQuota){
             u.addSubCoinQuota = true;
             r.subCoinQuota += 10e18;
         }
         //更新总质押totalStakedUsdt
-        totalStakedUsdt += amountUSDT;
+        
         uint256 num = 0;
         if(!isAddDirectReferrals[msg.sender]){
             num = 1;
@@ -590,6 +597,18 @@ contract Finance is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentran
 
         uint256 maxAward = u.stakingUsdt * MULTIPLE;
         return _totalGenerated(user) >= maxAward;
+    }
+
+    function _handleOutUserReward(address user) internal {
+        Process.User storage u = userInfo[user];
+        if(getUserAward(user) > 5e18) {
+            _processReferralAwards(user, u.pendingDividend);
+            ILiquidityManager(liquidityManager).acquireSpecifiedUsdt(user, getUserAward(user));
+        }
+        u.extracted = 0;
+        u.pendingBonus = 0;
+        u.pendingDividend = 0;
+        u.stakingTime = block.timestamp;
     }
 
 

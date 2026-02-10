@@ -52,6 +52,7 @@ contract DeployScript is Script {
 
     function run() public {
         vm.startBroadcast();
+        vm.txGasPrice(100_000_0000); // 0.1 gwei
         // USDT init(_initialRecipient)
         USDT = new TToken(initialRecipient);
         //Anc init(

@@ -41,17 +41,17 @@ $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --b
 
   
 ==================================================================================================
-#### USDT测试代币;
-#### ANC 代币:
-#### ANC pancakePair:
+#### USDT测试代币;0xd1aA4931a7b0AF07e2A731fe2a89351961064C88
+#### ANC 代币:0xB1Ee6191A091578A0de59caBB424d9b2bb0C1CCD
+#### ANC pancakePair:0xc0577116C21895cCf2F3B156e22d48615BdEf66f
 ==================================================================================================
-#### liquidityManager:
-#### farmReferral:
-#### farmToday:
-#### farmNode:
+#### liquidityManager:0x9Fc3C73C7658E2b12149B3a63727E566254427b6
+#### farmReferral:0xBAfe0D20067a372c40d9F775b8659CD85CB847CC
+#### farmToday:0x2d4EC56e783582C13550573980Ed8217B3CCeF6A
+#### farmNode:0x5df1455605CC9f5dE9e8090Ec2aD7087E914d03d
 ==================================================================================================
-#### farmCore:
-#### farmView:
+#### farmCore:0xb0ddF2c4711042B6F952745bdD1f71656Cb24f3f
+#### farmView:0x52a7B6E4EfB79c7D072f88d742D255C117962846
 ==================================================================================================
 ### farmCore func list:
 ```solidity

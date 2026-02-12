@@ -86,17 +86,17 @@ contract FarmReferral is Initializable, OwnableUpgradeable, UUPSUpgradeable, Ree
     }
     // ====================== Normal Referral Registration======================
     function referral(address recommender, address user) external onlyCore nonReentrant {
-        require(user != initialCode, "Invalid sender");
-        if (recommender == address(0)) recommender = initialCode;
+        // require(user != initialCode, "Invalid sender");
+        // if (recommender == address(0)) recommender = initialCode;
         require(recommender != user, "Invalid recommender");
 
-        // (,uint256 stakingUsdt,,,,) = farmCore.userInfo(recommender);
-        // if (recommender != initialCode) {
-        //     require(
-        //         referralInfo[recommender].recommender != address(0) && stakingUsdt > 0,
-        //         "RECOMMENDATION_IS_REQUIRED_REFERRAL"
-        //     );
-        // }
+        (,uint256 stakingUsdt,,,,) = farmCore.userInfo(recommender);
+        if (recommender != initialCode) {
+            require(
+                referralInfo[recommender].recommender != address(0) && stakingUsdt > 0,
+                "RECOMMENDATION_IS_REQUIRED_REFERRAL"
+            );
+        }
         require(referralInfo[user].recommender == address(0), "InviterExists");
         referralInfo[user].recommender = recommender;
     }

@@ -55,7 +55,7 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
     mapping(address => Process.StakingOrder[]) stakeOrdersBelongUser;
     //node奖励数据存储
     uint256 rounds;
-    uint256 totalCumulateAward;
+    uint256 public totalCumulateAward;
     uint256 lastUpdateTime;
     mapping(uint256 => mapping(Process.NodeType => uint256)) public cumulateAwardForNode;
     mapping(uint256 => mapping(Process.Cumulate => uint256)) public cumulateAwardForOther;

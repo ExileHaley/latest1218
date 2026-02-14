@@ -32,7 +32,7 @@ contract FarmView {
         Process.Record[] memory invite
     ){
         node = farmNode.getAwardRecords(user);
-        today = farmNode.getAwardRecords(user);
+        today = farmToday.getAwardRecords(user);
         invite = farmReferral.getAwardRecords(user);
     }
 
@@ -120,5 +120,7 @@ contract FarmView {
         return stakingUsdt > 0;
     }
 
-    
+    function totalCumulateAward() external view returns(uint256){
+        return farmCore.totalCumulateAward();
+    }
 }

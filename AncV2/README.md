@@ -14,7 +14,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 
 ### deploy wallet
 ```shell
-$ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
+$ forge script script/DeployView.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 
 #### FarmCore.sol
@@ -39,7 +39,7 @@ $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --b
 - 提供方法计算每日 top6 奖励并发放
 - 提供接口供 FarmCore 更新每日业绩
 
-  
+## 更新FarmView的abi以及合约地址，然后总奖励池调用其中totalCumulateAward方法
 ==================================================================================================
 #### USDT测试代币;0x52dFd4C94A8d97D4cE7a72e7B9eaf8E54435b628
 #### ANC 代币:0x5BF24Ab6BC654B759C774Fab7923a577271d460C
@@ -51,7 +51,7 @@ $ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --b
 #### farmNode:0xF8fE1097F9216570A25025222A446602C372eeB8
 ==================================================================================================
 #### farmCore:0x61C5A58ebbE019fcF7F0E0681079f8c40f0edBb1
-#### farmView:0xD32E2e9Afe6574B987B95C9996dE129e7EDE75Cf
+#### farmView:0xFC9bEc9212dc8f988b6E5bB8486aF341DA8Bd47C
 ==================================================================================================
 ### farmCore func list:
 ```solidity
@@ -149,6 +149,7 @@ struct Today{
 }
 //获取今日英雄榜的参与者以及业绩，这里可以截取前10条展示，不用展示全部
 function getTodayTopInfo() external view returns(Process.Today[] memory);
-
+//获取总奖池数额单位usdt
+function totalCumulateAward() external view returns(uint256);
 
 ```

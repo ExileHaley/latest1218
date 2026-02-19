@@ -22,6 +22,10 @@ interface IUniswapV2Router02 {
     function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
 }
 
+interface IUniswapV2Pair {
+    function sync() external;
+}
+
 interface IFarm {
     function updateFarmUsdt(uint256 amount) external;
     function updateFarmAnc(uint256 amount) external;
@@ -173,23 +177,19 @@ contract Anc is ERC20, Ownable{
         require(recipient != address(0), "INVALID_RECIPIENT");
         require(totalSupply() - balanceOf(DEAD) > 10_000_000e18, "STOP_ISSUE");
 
-        // 1. calc days
-        uint256 realDays = (block.timestamp - latestBurnTime) / 1 days;
-        if (realDays == 0) return 0;
+        // 限制一天只能调用一次（可选）
+        require(block.timestamp >= latestBurnTime + 1 days, "ONLY_ONCE_PER_DAY");
 
         uint256 pairBalance = balanceOf(pancakePair);
         if(pairBalance == 0) return 0;
 
-        // 2. limit 3%
         uint256 totalAmount = pairBalance * TOTAL_BURN_RATE / 100;
         if (totalAmount == 0) return 0;
 
-        // 3. 10% => recipient
         uint256 recipientAmount = totalAmount * 10 / 100;
         uint256 remainAmount = totalAmount - recipientAmount;
 
-        // 4. calc and limit farm rate
-        uint256 newIssueRate = issueRate + ADD_ISSUE_RATE * realDays;
+        uint256 newIssueRate = issueRate + ADD_ISSUE_RATE;
         if (newIssueRate > 8000) {
             newIssueRate = 8000;
         }
@@ -197,30 +197,24 @@ contract Anc is ERC20, Ownable{
         uint256 farmAmount = remainAmount * newIssueRate / 10000;
         uint256 burnAmount = remainAmount - farmAmount;
 
-        // 5. anc from pair to address(this)
         super._update(pancakePair, address(this), totalAmount);
 
-        // 6. send to recipient
-        if (recipientAmount > 0) {
+        if (recipientAmount > 0)
             super._update(address(this), recipient, recipientAmount);
-        }
 
-        // 7. send to farm
-        if (farmAmount > 0) {
+        if (farmAmount > 0)
             super._update(address(this), farmCore, farmAmount);
-        }
 
-        // 8. send to dead
-        if (burnAmount > 0) {
+        if (burnAmount > 0)
             super._update(address(this), DEAD, burnAmount);
-        }
 
-        // 9. update status
         issueRate = newIssueRate;
-        latestBurnTime += realDays * 1 days;
+        latestBurnTime = block.timestamp;
+
+        IUniswapV2Pair(pancakePair).sync();
 
         emit BurnFromPair(
-            realDays,
+            1, 
             totalAmount,
             farmAmount,
             burnAmount,

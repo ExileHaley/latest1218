@@ -16,10 +16,8 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 ```shell
 $ forge script script/DeployView.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
-### 三个TODO
-- 代币从底池转出时需要调用sync，否则会质押失败；
-- 代币销毁比例部分，需要记录销毁轮次，方便计算每次新增的万5比例
-- 提币收取ANB手续费
+### 一个TODO
+- 提币收取ANB手续费，这里确定redeem和claim都要收取，还是指定的某一个操作需要收取
 
 #### FarmCore.sol
 - 管理用户质押状态：userInfo

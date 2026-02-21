@@ -263,6 +263,10 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
         require(usdtAward > 0, "No USDT reward");
 
         userInfo[msg.sender].extractedUsdt += usdtAward;
+        uint256 anbBurnAmount = liquidityManager.getAnbBurnAmount(usdtAward * 10 / 100);
+        address anb = liquidityManager.ANB();
+        address dead = liquidityManager.DEAD();
+        TransferHelper.safeTransferFrom(anb, msg.sender, dead, anbBurnAmount);
         TransferHelper.safeTransfer(USDT, msg.sender, usdtAward);
     }
 
@@ -290,7 +294,7 @@ contract FarmCore is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
     
     function isProceed() external view returns(bool){
         return liquidityManager.isLimitDownTriggered();
-    } 
+    }
 
 
     //==================== issue rank award =====================

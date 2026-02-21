@@ -14,7 +14,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 
 ### deploy wallet
 ```shell
-$ forge script script/DeployView.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
+$ forge script script/Deploy.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 ### 一个TODO
 - 提币收取ANB手续费，这里确定redeem和claim都要收取，还是指定的某一个操作需要收取
@@ -41,19 +41,20 @@ $ forge script script/DeployView.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz
 - 提供方法计算每日 top6 奖励并发放
 - 提供接口供 FarmCore 更新每日业绩
 
-## 更新FarmView的abi以及合约地址，然后总奖励池调用其中totalCumulateAward方法
+## 更新所有合约地址，另外claimUsdt方法的使用逻辑有改变，需要更新逻辑
+#### ANB:0xf1f95D12aF84756F5f30e517f20116e2dFeF313e
 ==================================================================================================
-#### USDT测试代币;0x52dFd4C94A8d97D4cE7a72e7B9eaf8E54435b628
-#### ANC 代币:0x5BF24Ab6BC654B759C774Fab7923a577271d460C
-#### ANC pancakePair:0x05afD031748C57F7152CE98f6884cf2C514E8E68
+#### USDT测试代币;0x6529a394665C1d55eCBac669908bec7299931e90
+#### ANC 代币:0xB159DFFCbc2aD76f43Aa6446120f71eEAC180c2f
+#### ANC pancakePair:0x0370424CB186e15d4caEe461645B655Ff21CabF4
 ==================================================================================================
-#### liquidityManager:0x0DcbCBFd0Faa35CBEd24ef854c620286c6cF3c90
-#### farmReferral:0x25eD0a93865654b0f9D7880B12cf5e923235031A
-#### farmToday:0xb4a82546FdDb1C2DeEBbCF0C146706383Cc1Ae43
-#### farmNode:0xF8fE1097F9216570A25025222A446602C372eeB8
+#### liquidityManager:0xc04D9000766A762604bd3B75f7d0ed5aC80ef312
+#### farmReferral:0x7f440dC133E8634F8E9EECEFC0b6B913C794ddfC
+#### farmToday:0x7a938FA390b937ea0ad76A2b361d992B3b970E0b
+#### farmNode:0x73a07e5EBDb9797Ff68667F4E1Eeb11CdE580Fc9
 ==================================================================================================
-#### farmCore:0x61C5A58ebbE019fcF7F0E0681079f8c40f0edBb1
-#### farmView:0xFC9bEc9212dc8f988b6E5bB8486aF341DA8Bd47C
+#### farmCore:0x5dA84B493b55A66b4940e47Fa43442FbB020d0ec
+#### farmView:0x29d59481660840A44B8E8B4e63A50275e3642e37
 ==================================================================================================
 ### farmCore func list:
 ```solidity
@@ -61,7 +62,7 @@ $ forge script script/DeployView.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz
 function referral(address recommender) external;
 //质押，amountUsdt是usdt的数量，100个usdt起步
 function stake(uint256 amountUsdt) external;
-//提取usdt收益
+//提取usdt收益,这里需要ANB授权，然后才能提取USDT，因为提取usdt需要从用户钱包扣10%usdt等值的anb作为手续费
 function claimUsdt() external;
 //提取anc收益
 function claimAnc() external;

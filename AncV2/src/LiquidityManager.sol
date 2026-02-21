@@ -16,8 +16,9 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable{
     event Liquidity(address user, uint256 amountLP);
     IUniswapV2Router02 public constant pancakeRouter = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
     address public constant DEAD = 0x000000000000000000000000000000000000dEaD;
+    address public constant ANB = 0xf1f95D12aF84756F5f30e517f20116e2dFeF313e;
     //TODO
-    address public tokenAnb;
+    // address public tokenAnb;
     address public USDT;
     address public tokenAnc;
     address public uniswapV2Factory;
@@ -164,5 +165,12 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable{
         _exchange(USDT, tokenAnc, buyAmount);
 
         latestUpdatePrice = getAmountOut();
+    }
+
+    function getAnbBurnAmount(uint256 amountUsdt) external view returns(uint256){
+        address[] memory path = new address[](2);
+        path[0] = USDT;
+        path[1] = ANB;
+        return pancakeRouter.getAmountsOut(amountUsdt, path)[1];
     }
 }

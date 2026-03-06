@@ -8,11 +8,8 @@ contract Router is Ownable{
 
     address public finance;
     
-    address public liquidityManager;
-
-    constructor(address _finance, address _liquidityManager)Ownable(msg.sender){
+    constructor(address _finance)Ownable(msg.sender){
         finance = _finance;
-        liquidityManager = _liquidityManager;
     }
 
     function initialCode() external view returns(address){

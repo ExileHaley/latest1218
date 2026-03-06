@@ -10,11 +10,9 @@ contract UpgradeScript is Script{
 
     Finance public finance;
     Router  public router;
-    address public liquidityManager;
 
     function setUp() public {
         finance = Finance(payable(0x4c5ce1c4994225eD159efB36C9bd720c0F2caa99));
-        liquidityManager = 0xC93C6201d0d16DD246198098AF92236890b7565F;
     }
 
     function run() public {
@@ -25,7 +23,7 @@ contract UpgradeScript is Script{
         bytes memory data= "";
         finance.upgradeToAndCall(address(financeV2Impl), data);
 
-        router = new Router(address(finance), liquidityManager);
+        router = new Router(address(finance));
         finance.setRouterAddr(address(router));
 
         vm.stopBroadcast();

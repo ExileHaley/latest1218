@@ -68,4 +68,49 @@ contract Router is Ownable{
         IFinance(finance).swapSubToken(msg.sender, amountUSDT);
     }
 
+
+    function getUserInfoBasic(address user)
+        external
+        view
+        returns (
+            uint256 stakingUsdt,
+            uint256 extracted,
+            uint256 remaining,
+            uint256 stakingAward,
+            uint256 extractable,
+            uint256 referralAward,
+            uint256 shareAward   
+        )
+    {   
+        (stakingUsdt,,,,extracted,) = IFinance(finance).userInfo(user);
+        (,,,,referralAward,shareAward,,,) = IFinance(finance).referralInfo(user);
+
+        //剩余待释放
+        uint256 futureTotalAward = stakingUsdt * IFinance(finance).MULTIPLE();
+        if(futureTotalAward >= extracted) remaining = futureTotalAward - extracted;
+        else remaining = 0;    
+
+        stakingAward = IFinance(finance).getUserStakingAward(user);
+        extractable = IFinance(finance).getUserAward(user);
+
+    }
+
+
+    function getUserInfoReferral(address user)
+        external
+        view
+        returns (
+            Process.Level level,
+            address recommender,
+            uint256 referralNum,
+            uint256 performance,
+            uint256 subCoinQuota,
+            uint256 directNum
+        )
+    {
+        (recommender,level,referralNum,performance,,,subCoinQuota,,) = IFinance(finance).referralInfo(user);
+        address[] memory directs = IFinance(finance).getDirectReferralAddr(user);
+        directNum = directs.length;
+    }
+
 }

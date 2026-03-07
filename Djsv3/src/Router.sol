@@ -85,7 +85,6 @@ contract Router is Ownable{
         (stakingUsdt,,,,extracted,) = IFinance(finance).userInfo(user);
         (,,,,referralAward,shareAward,,,) = IFinance(finance).referralInfo(user);
 
-        //剩余待释放
         uint256 futureTotalAward = stakingUsdt * IFinance(finance).MULTIPLE();
         if(futureTotalAward >= extracted) remaining = futureTotalAward - extracted;
         else remaining = 0;    

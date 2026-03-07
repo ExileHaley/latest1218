@@ -17,7 +17,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 $ forge script script/Upgrade.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 
-### 更新ABI，getDirectReferralInfo方法返回结构体字段有变化
+### 更新ABI，使用router abi，之前调用finance的调用router，但是usdt依旧授权给finance，financeView不变
 
 ### contract address
 -----------------------------------------------------------------------------------
@@ -41,6 +41,8 @@ $ forge script script/Upgrade.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --
 #### nodeDividends:0x24629495Bfd635a50B105efd602b104139eF2F8B
 -----------------------------------------------------------------------------------
 #### Exchange:0x87924102384beEA7c10553283bE3b32BA8a7deB7
+-----------------------------------------------------------------------------------
+#### router: 0x1b8e2DEcCE429acFCF600a263f4Bb3CE0C8799B3
 -----------------------------------------------------------------------------------
 
 ### finance func list
@@ -167,3 +169,6 @@ function exhcange(uint256 amountDJS) external;
 //查询兑换价格，输入DJS的数量amountDJS，返回兑换USDT的结果大概多少个
 function getAmountsOut(uint256 amountDJS) external view returns (uint256);
 ```
+
+$ cast abi-encode "constructor(address)" 0x4c5ce1c4994225eD159efB36C9bd720c0F2caa99
+$ forge verify-contract --chain-id 56 --compiler-version v0.8.30+commit.a1b79de6 0x1b8e2DEcCE429acFCF600a263f4Bb3CE0C8799B3 src/Router.sol:Router  --constructor-args 0x0000000000000000000000004c5ce1c4994225ed159efb36c9bd720c0f2caa99 --etherscan-api-key Y43WNBZNXWR5V4AWQKGAQ9RCQEXTUHK88V

@@ -6,31 +6,31 @@ library Process {
     enum Category {DIRECT, NORMAL_LEVEL, SHARE_LEVEL}
 
     struct User{
-        uint256 stakingUsdt;        //质押数量
-        uint256 stakingTime;        //质押时间
-        uint256 pendingDividend;    //质押收益结余，计算使用
-        uint256 pendingBonus;       //邀请奖励+share奖励，计算使用
-        uint256 extracted;          //已提取收益   
-        bool    addSubCoinQuota;    //大于1000u质押的用户有且只有给一次10U子币额度
+        uint256 stakingUsdt;  
+        uint256 stakingTime;      
+        uint256 pendingDividend;    
+        uint256 pendingBonus;       
+        uint256 extracted;        
+        bool    addSubCoinQuota;   
     }
 
     struct Referral{
-        address recommender;    //推荐人地址
-        Level   level;          //级别
-        uint256 referralNum;    //有效邀请人数
-        uint256 performance;    //邀请总业绩
-        uint256 referralAward;  //邀请奖励
-        uint256 shareAward;     //share等级升级前的负债，避免多给
-        uint256 subCoinQuota;   //子币额度
-        bool    isMigration;    //是否映射旧版本邀请关系
-        bool    underlingExistV5;        //是否存在V5
+        address recommender;  
+        Level   level;        
+        uint256 referralNum;   
+        uint256 performance;   
+        uint256 referralAward;  
+        uint256 shareAward;     
+        uint256 subCoinQuota;   
+        bool    isMigration;   
+        bool    underlingExistV5;       
     }
 
     struct Record{
-        Category category; //奖励类别
-        address from;   //奖励来源于谁的质押
-        uint256 amount; //奖励数量
-        uint256 time;   //获得奖励的时间
+        Category category; 
+        address from;  
+        uint256 amount; 
+        uint256 time;   
     }
 
     struct Info{
@@ -39,18 +39,18 @@ library Process {
         uint256 performance;
     }
 
-    // 计算某用户升级后的等级和新增 sharePerformance
+
     function calcUpgradeLevel(
         Process.Referral memory r,
         uint256 directReferralsCount,
         uint256 directV5Count
     ) internal pure returns (Level newLevel, bool upgrade) {
 
-        // 默认保持原等级
+
         newLevel = r.level;
         upgrade = false;
 
-        // 直接算最终应得等级（从高到低）
+
         if (directV5Count >= 2) {
             newLevel = Level.SHARE;
         }
@@ -70,7 +70,7 @@ library Process {
             newLevel = Level.V1;
         }
 
-        // 只要等级变高，就升级
+
         if (newLevel > r.level) {
             upgrade = true;
         }

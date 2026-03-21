@@ -22,12 +22,12 @@ library Errors {
     error InsufficientLP();
     error NoReward();
 
-    error InsufficientLiquidity();   // 新增错误：流动性不足
-    error AmountTooLow();            // 新增错误：金额太小
+    error InsufficientLiquidity();  
+    error AmountTooLow();          
     
-    error PairNotExist();            //pair不存在
-    error NotRequiredReferral();     //质押时必须要邀请关系
-    error NoMigrationRequired();     //不需要映射
-    error AlreadyMigrated();         //已经映射
-    error NoStake();                 //没有质押
+    error PairNotExist();         
+    error NotRequiredReferral();   
+    error NoMigrationRequired();  
+    error AlreadyMigrated();    
+    error NoStake();        
 }

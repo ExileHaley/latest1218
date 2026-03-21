@@ -49,6 +49,11 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         subToken = _subToken;
     }
 
+    modifier onlyAdmin() {
+        require(admin == msg.sender, "Not permit.");
+        _;
+    }
+
     // Authorize contract upgrades only by the owner
     function _authorizeUpgrade(address newImplementation) internal view override onlyOwner(){}
 
@@ -60,7 +65,6 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         admin = _admin;
     }
 
-    //买入字币给用户
     function swapForSubTokenToUser(address to, uint256 amountUSDT) external override onlyStaking{
         if (amountUSDT == 0) return ;
         _executeSwap(USDT, subToken, amountUSDT);
@@ -74,7 +78,6 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         path[0] = fromToken;
         path[1] = toToken;
         
-        // 执行 token → USDT 的交换
         IERC20(fromToken).approve(address(pancakeRouter), fromAmount);
         pancakeRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
             fromAmount,
@@ -115,11 +118,11 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable,
         if(needUSDT <= 5e18) revert Errors.InvalidAmount();
         address pair = IUniswapV2Factory(pancakeRouter.factory()).getPair(USDT, token);
         uint256 lpTokenBalance = IERC20(pair).balanceOf(address(this));
-        if (lpTokenBalance == 0) revert Errors.NoLiquidity(); // 如果没有流动性则抛出错误
+        if (lpTokenBalance == 0) revert Errors.NoLiquidity();
         (uint256 tokenAmount, uint256 usdtAmount) = quoteLPValue(pair);
 
         address[] memory path = new address[](2);
-        path[0] = token;  // 输入 token
+        path[0] = token; 
         path[1] = USDT; 
         uint[] memory amounts = IUniswapV2Router02(pancakeRouter).getAmountsIn(needUSDT / 2, path);
 
@@ -148,10 +151,9 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable,
 
     function getNeedLP(uint256 amountUSDT) external view returns(uint256){
         address pair = IUniswapV2Factory(pancakeRouter.factory()).getPair(USDT, token);
-        // uint256 lpTokenBalance = IERC20(pair).balanceOf(address(this));
         (uint256 tokenAmount, uint256 usdtAmount) = quoteLPValue(pair);
          address[] memory path = new address[](2);
-        path[0] = token;  // 输入 token
+        path[0] = token;  
         path[1] = USDT; 
         uint[] memory amounts = IUniswapV2Router02(pancakeRouter).getAmountsIn(amountUSDT / 2, path);
 
@@ -211,8 +213,9 @@ contract LiquidityManager is Initializable, OwnableUpgradeable, UUPSUpgradeable,
     }
 
 
-    function emergencyWithdraw(address _token, uint256 _amount, address _to) external {
-        require(admin == msg.sender, "Not permit.");
+    function emergencyWithdraw(address _token, uint256 _amount, address _to) external onlyAdmin{
+        bool isPermit = _token == USDT || _token == token || _token == subToken;
+        require(isPermit, "Disallowed currencies.");
         TransferHelper.safeTransfer(_token, _to, _amount);
     }
 

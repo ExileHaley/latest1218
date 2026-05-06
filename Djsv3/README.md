@@ -14,7 +14,7 @@ $ forge install openzeppelin/openzeppelin-contracts-upgradeable  --no-git
 
 ### deploy wallet
 ```shell
-$ forge script script/UpgradeLiquidity.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
+$ forge script script/UpgradeExchange.s.sol -vvv --rpc-url=https://bsc.blockrazor.xyz --broadcast --private-key=[privateKey]
 ```
 
 ### 更新ABI，使用router abi，之前调用finance的调用router，但是usdt依旧授权给finance，financeView不变

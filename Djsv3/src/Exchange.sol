@@ -51,33 +51,33 @@ contract Exchange is Initializable, OwnableUpgradeable, UUPSUpgradeable, Reentra
 
 
     function _executeSwap(address fromToken, address toToken, uint256 fromAmount) private{
-        address[] memory path = new address[](2);
-        path[0] = fromToken;
-        path[1] = toToken;
+        // address[] memory path = new address[](2);
+        // path[0] = fromToken;
+        // path[1] = toToken;
         
-        // 执行 token → USDT 的交换
-        TransferHelper.safeApprove(fromToken, address(pancakeRouter), 0);
-        TransferHelper.safeApprove(fromToken, address(pancakeRouter), fromAmount);
-        pancakeRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-            fromAmount,
-            0,
-            path,
-            address(this),
-            block.timestamp + 30
-        );
+        // // 执行 token → USDT 的交换
+        // TransferHelper.safeApprove(fromToken, address(pancakeRouter), 0);
+        // TransferHelper.safeApprove(fromToken, address(pancakeRouter), fromAmount);
+        // pancakeRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        //     fromAmount,
+        //     0,
+        //     path,
+        //     address(this),
+        //     block.timestamp + 30
+        // );
     }
 
     function exhcange(uint256 amountDJS) external nonReentrant(){
-        require(amountDJS > 0, "ZERO_AMOUNT");
-        TransferHelper.safeTransferFrom(DJS, msg.sender, address(this), amountDJS);
-        uint256 beforeExhcange = IERC20(USDT).balanceOf(address(this));
-        _executeSwap(DJS, USDT, amountDJS);
-        uint256 afterExchange = IERC20(USDT).balanceOf(address(this));
-        uint256 fee = (afterExchange - beforeExhcange) * 5 / 100;
-        uint256 amount = afterExchange - beforeExhcange - fee;
-        TransferHelper.safeTransfer(USDT, recipient, fee);
-        TransferHelper.safeTransfer(USDT, msg.sender, amount);
-        emit ExhcangeResult(msg.sender, amountDJS, amount);
+        // require(amountDJS > 0, "ZERO_AMOUNT");
+        // TransferHelper.safeTransferFrom(DJS, msg.sender, address(this), amountDJS);
+        // uint256 beforeExhcange = IERC20(USDT).balanceOf(address(this));
+        // _executeSwap(DJS, USDT, amountDJS);
+        // uint256 afterExchange = IERC20(USDT).balanceOf(address(this));
+        // uint256 fee = (afterExchange - beforeExhcange) * 5 / 100;
+        // uint256 amount = afterExchange - beforeExhcange - fee;
+        // TransferHelper.safeTransfer(USDT, recipient, fee);
+        // TransferHelper.safeTransfer(USDT, msg.sender, amount);
+        // emit ExhcangeResult(msg.sender, amountDJS, amount);
     }
 
 

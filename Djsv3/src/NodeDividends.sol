@@ -83,6 +83,11 @@ contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
         }
     }
 
+    function emergencyWithdraw(address _token,  address _to) external onlyOwner{
+        uint256 amount = IERC20(_token).balanceOf(address(this));
+        TransferHelper.safeTransfer(_token, _to, amount);
+    }
+
     function updateFarm(uint256 amountUSDT) external onlyFarm() {
         if (totalNftQuantity == 0) {
             return;
@@ -173,26 +178,26 @@ contract NodeDividends is Initializable, OwnableUpgradeable, UUPSUpgradeable, ER
     }
 
     function claimOrderAward(uint256 orderId) external{
-        require(orderInfo[orderId].holder == msg.sender, "Not permit.");
-        uint256 award = 0;
-        award = getExtractable(orderId);
-        require(award > 0, "NO_AWARD");
-        orderInfo[orderId].extracted += award;
-        TransferHelper.safeTransfer(token, msg.sender, award);
+        // require(orderInfo[orderId].holder == msg.sender, "Not permit.");
+        // uint256 award = 0;
+        // award = getExtractable(orderId);
+        // require(award > 0, "NO_AWARD");
+        // orderInfo[orderId].extracted += award;
+        // TransferHelper.safeTransfer(token, msg.sender, award);
     }
 
     function claimUserUSDT() external {
-        User storage u = userInfo[msg.sender];
+        // User storage u = userInfo[msg.sender];
 
-        uint256 pending = u.amountNFT * perNftAward - u.farmDebt;
-        uint256 total = u.pending + pending;
+        // uint256 pending = u.amountNFT * perNftAward - u.farmDebt;
+        // uint256 total = u.pending + pending;
 
-        require(total > 0, "NO_REWARD");
+        // require(total > 0, "NO_REWARD");
 
-        u.pending = 0;
-        u.farmDebt = u.amountNFT * perNftAward;
+        // u.pending = 0;
+        // u.farmDebt = u.amountNFT * perNftAward;
 
-        TransferHelper.safeTransfer(USDT, msg.sender, total);
+        // TransferHelper.safeTransfer(USDT, msg.sender, total);
     }
 
     function getAwardUsdt(address user) public view returns (uint256) {
